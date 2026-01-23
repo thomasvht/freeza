@@ -7,11 +7,7 @@
 /e2e/test-output/
 /.angular/
 .angular/
-
-# Firebase files
-/src/app/firebase.config.ts
-.firebase/*
-/.firebase/*
+.firebase/
 
 # Node modules and dependency files
 /node_modules/
@@ -20,6 +16,7 @@
 
 # Environment files
 /.env
+/src/environments/
 
 # Angular CLI and build artefacts
 /.angular-cli.json
