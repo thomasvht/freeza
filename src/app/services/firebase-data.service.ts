@@ -15,7 +15,7 @@ import {
   DocumentData,
   Firestore,
 } from 'firebase/firestore';
-import { firebaseConfig } from '../config/firebase.config';
+import { firebaseConfig } from '../firebase.config';
 import { FoodItem } from '../models/food-item';
 import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';

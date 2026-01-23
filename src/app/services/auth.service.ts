@@ -11,7 +11,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth';
-import { firebaseConfig } from '../config/firebase.config';
+import { firebaseConfig } from '../firebase.config';
 import { signal, computed } from '@angular/core';
 
 /**

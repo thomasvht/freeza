@@ -1,5 +1,5 @@
 # Angular specific
-/dist/
+/public/
 /out-tsc/
 /tmp/
 /coverage/
@@ -8,7 +8,7 @@
 .angular/
 
 # Firebase files
-/src/app/config/*
+/src/app/firebase.config.ts
 
 # Node modules and dependency files
 /node_modules/
