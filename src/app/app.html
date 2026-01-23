@@ -1,236 +1,36 @@
 <div class="container">
-  <!-- Header -->
-  <header class="header">
-    <div class="header-content">
-      <h1 class="title">❄️ Freeza</h1>
-      <p class="subtitle">Freezer Inventory Manager</p>
-    </div>
-  </header>
+  @if (!authService.isAuthenticated()) {
+    <app-auth-shell />
+  } @else {
+    <!-- Header -->
+    <app-header (logout)="onLogout()" />
 
-  <!-- Add/Edit Item Form -->
-  <div class="form-section">
-    <h2>{{ editingId ? 'Edit Item' : 'Add New Item' }}</h2>
-    <form [formGroup]="foodForm" (ngSubmit)="addOrUpdateItem()" class="form">
-      <div class="form-row">
-        <div class="form-group">
-          <label for="name">Item Name *</label>
-          <input
-            id="name"
-            type="text"
-            formControlName="name"
-            placeholder="e.g., Chicken Breast"
-            class="input"
-          />
-          @if(foodForm.get('name')?.touched && foodForm.get('name')?.invalid) {
-          <span class="error">
-            Name is required (min 2 characters)
-          </span>
-          }
-        </div>
+    <!-- Add/Edit Item Form -->
+    <app-food-form
+      [foodForm]="foodForm"
+      [editingId]="editingId()"
+      [categories]="categories"
+      (submit)="addOrUpdateItem()"
+      (cancel)="resetForm()"
+    />
 
-        <div class="form-group">
-          <label for="category">Category *</label>
-          <select id="category" formControlName="category" class="input">
-            <option *ngFor="let cat of categories" [value]="cat.key">
-              {{ cat.label }}
-            </option>
-          </select>
-        </div>
-      </div>
+    <!-- Search and Filter Section -->
+    <app-filter-section
+      [filterForm]="filterForm"
+      [categories]="categories"
+    />
 
-      <div class="form-row">
-        <div class="form-group">
-          <label for="quantity">Quantity *</label>
-          <input
-            id="quantity"
-            type="number"
-            step="0.1"
-            formControlName="quantity"
-            placeholder="1"
-            class="input"
-          />
-          <span class="error" *ngIf="foodForm.get('quantity')?.touched && foodForm.get('quantity')?.invalid">
-            Quantity must be greater than 0
-          </span>
-        </div>
-
-        <div class="form-group">
-          <label for="unit">Unit *</label>
-          <input
-            id="unit"
-            type="text"
-            formControlName="unit"
-            placeholder="e.g., kg, pieces, bags"
-            class="input"
-          />
-          <span class="error" *ngIf="foodForm.get('unit')?.touched && foodForm.get('unit')?.invalid">
-            Unit is required
-          </span>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="storageDate">Storage Date *</label>
-          <input id="storageDate" type="date" formControlName="storageDate" class="input" />
-        </div>
-
-        <div class="form-group">
-          <label for="expiryDate">Expiry Date *</label>
-          <input
-            id="expiryDate"
-            type="date"
-            formControlName="expiryDate"
-            class="input"
-          />
-          <span class="error" *ngIf="foodForm.get('expiryDate')?.touched && foodForm.get('expiryDate')?.invalid">
-            Expiry date is required
-          </span>
-        </div>
-      </div>
-
-      <div class="form-group full-width">
-        <label for="notes">Notes</label>
-        <textarea
-          id="notes"
-          formControlName="notes"
-          placeholder="Additional notes (optional)"
-          class="input textarea"
-          rows="2"
-        ></textarea>
-      </div>
-
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary" [disabled]="!foodForm.valid">
-          {{ editingId ? '✏️ Update Item' : '➕ Add Item' }}
-        </button>
-        <button
-          *ngIf="editingId"
-          type="button"
-          class="btn btn-secondary"
-          (click)="resetForm()"
-        >
-          ✕ Cancel
-        </button>
-      </div>
-    </form>
-  </div>
-
-  <!-- Search and Filter Section -->
-  <div class="controls-section">
-    <div class="search-box">
-      <input
-        type="text"
-        [(ngModel)]="searchTerm"
-        placeholder="🔍 Search items..."
-        class="search-input"
+    <!-- Items List -->
+    @if (getFilteredItems().length > 0) {
+      <app-items-list
+        [items]="sortItems(getFilteredItems())"
+        (itemEdit)="editItem($event)"
+        (itemDelete)="deleteItem($event)"
       />
-    </div>
 
-    <div class="filter-categories">
-      <button
-        class="filter-btn"
-        [class.active]="!selectedCategory"
-        (click)="selectedCategory = null"
-      >
-        All Items
-      </button>
-      <button
-        *ngFor="let cat of categories"
-        class="filter-btn"
-        [class.active]="selectedCategory === cat.key"
-        [style.border-color]="cat.color"
-        (click)="selectedCategory = cat.key"
-      >
-        {{ cat.label }}
-      </button>
-    </div>
-  </div>
-
-  <!-- Items List -->
-  <div class="items-section">
-    <div *ngIf="(items$ | async) as items">
-      <div *ngIf="sortItems(getFilteredItems(items)).length === 0" class="empty-state">
-        <p>📦 No items in your freezer yet. Add one to get started!</p>
-      </div>
-
-      <div class="items-grid">
-        <div
-          *ngFor="let item of sortItems(getFilteredItems(items))"
-          class="item-card"
-          [class.expired]="getExpiryStatus(item.expiryDate) === ExpiryStatus.EXPIRED"
-          [class.expiring-soon]="getExpiryStatus(item.expiryDate) === ExpiryStatus.EXPIRING_SOON"
-        >
-          <!-- Category Badge -->
-          <div
-            class="category-badge"
-            [style.background-color]="getCategoryColor(item.category)"
-          >
-            {{ FOOD_CATEGORIES[item.category].label }}
-          </div>
-
-          <!-- Status Indicator -->
-          <div class="status-indicator" [ngSwitch]="getExpiryStatus(item.expiryDate)">
-            <span *ngSwitchCase="ExpiryStatus.EXPIRED" class="status expired">⚠️ Expired</span>
-            <span *ngSwitchCase="ExpiryStatus.EXPIRING_SOON" class="status expiring-soon">
-              ⏰ Expiring in {{ getDaysUntilExpiry(item.expiryDate) }} days
-            </span>
-            <span *ngSwitchCase="ExpiryStatus.FRESH" class="status fresh">
-              ✓ Fresh ({{ getDaysUntilExpiry(item.expiryDate) }} days)
-            </span>
-          </div>
-
-          <!-- Item Details -->
-          <div class="item-content">
-            <h3 class="item-name">{{ item.name }}</h3>
-
-            <div class="item-details">
-              <div class="detail">
-                <span class="label">Quantity:</span>
-                <span class="value">{{ item.quantity }} {{ item.unit }}</span>
-              </div>
-              <div class="detail">
-                <span class="label">Stored:</span>
-                <span class="value">{{ item.storageDate | date: 'MMM dd, yyyy' }}</span>
-              </div>
-              <div class="detail">
-                <span class="label">Expires:</span>
-                <span class="value">{{ item.expiryDate | date: 'MMM dd, yyyy' }}</span>
-              </div>
-
-              <div *ngIf="item.notes" class="detail notes">
-                <span class="label">Notes:</span>
-                <span class="value">{{ item.notes }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Item Actions -->
-          <div class="item-actions">
-            <button class="btn btn-sm btn-edit" (click)="editItem(item)" title="Edit item">
-              ✏️ Edit
-            </button>
-            <button class="btn btn-sm btn-delete" (click)="deleteItem(item.id)" title="Delete item">
-              🗑️ Remove
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Statistics Footer -->
-  <footer class="footer" *ngIf="(items$ | async) as items">
-    <div *ngIf="items.length > 0" class="stats">
-      <span>📊 Total Items: <strong>{{ items.length }}</strong></span>
-      <span>
-        ⚠️ Expiring Soon:
-        <strong>{{ countExpiringItems(items) }}</strong>
-      </span>
-      <span>
-        🚨 Expired:
-        <strong>{{ countExpiredItems(items) }}</strong>
-      </span>
-    </div>
-  </footer>
+      <!-- Statistics Footer -->
+      <app-stats-footer [items]="getFilteredItems()" />
+    }
+  }
 </div>
+

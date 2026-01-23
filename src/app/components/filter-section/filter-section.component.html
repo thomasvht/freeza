@@ -1,0 +1,30 @@
+<div class="controls-section">
+  <div class="search-box">
+    <input
+      type="text"
+      [formControl]="getSearchControl()"
+      placeholder="🔍 Search items..."
+      class="search-input"
+    />
+  </div>
+
+  <div class="filter-categories">
+    <button
+      class="filter-btn"
+      [class.active]="!getCategoryControl().value"
+      (click)="getCategoryControl().setValue(null)"
+    >
+      All Items
+    </button>
+    @for (cat of categories(); track cat.key) {
+      <button
+        class="filter-btn"
+        [class.active]="getCategoryControl().value === cat.key"
+        [style.border-color]="cat.color"
+        (click)="getCategoryControl().setValue(cat.key)"
+      >
+        {{ cat.label }}
+      </button>
+    }
+  </div>
+</div>

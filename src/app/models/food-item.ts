@@ -1,3 +1,6 @@
+import { EXPIRY_CONSTANTS } from '../constants/app.constants';
+import { normalizeToMidnight, calculateDaysDifference } from '../utils/date.utils';
+
 export interface FoodItem {
   id: string;
   name: string;
@@ -25,18 +28,18 @@ export enum ExpiryStatus {
   FRESH = 'fresh',
 }
 
+/**
+ * Determines the expiry status of a food item
+ * @param expiryDate - The expiration date to check
+ * @returns ExpiryStatus enum value indicating the item's freshness status
+ */
 export function getExpiryStatus(expiryDate: Date): ExpiryStatus {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const expiry = new Date(expiryDate);
-  expiry.setHours(0, 0, 0, 0);
-  
-  const daysUntilExpiry = Math.floor(
-    (expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-  );
+  const today = normalizeToMidnight(new Date());
+  const expiry = normalizeToMidnight(expiryDate);
+  const daysUntilExpiry = calculateDaysDifference(today, expiry);
 
   if (daysUntilExpiry < 0) return ExpiryStatus.EXPIRED;
-  if (daysUntilExpiry <= 7) return ExpiryStatus.EXPIRING_SOON;
+  if (daysUntilExpiry <= EXPIRY_CONSTANTS.EXPIRING_SOON_THRESHOLD_DAYS)
+    return ExpiryStatus.EXPIRING_SOON;
   return ExpiryStatus.FRESH;
 }

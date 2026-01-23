@@ -1,0 +1,67 @@
+<div
+  class="item-card"
+  [class.expired]="expiryStatus() === ExpiryStatus.EXPIRED"
+  [class.expiring-soon]="expiryStatus() === ExpiryStatus.EXPIRING_SOON"
+>
+  <!-- Category Badge -->
+  <div
+    class="category-badge"
+    [style.background-color]="categoryColor()"
+  >
+    {{ FOOD_CATEGORIES[item().category].label }}
+  </div>
+
+  <!-- Status Indicator -->
+  @switch (expiryStatus()) {
+    @case (ExpiryStatus.EXPIRED) {
+      <span class="status expired">⚠️ Expired</span>
+    }
+    @case (ExpiryStatus.EXPIRING_SOON) {
+      <span class="status expiring-soon">
+        ⏰ Expiring in {{ daysUntilExpiry() }} days
+      </span>
+    }
+    @case (ExpiryStatus.FRESH) {
+      <span class="status fresh">
+        ✓ Fresh ({{ daysUntilExpiry() }} days)
+      </span>
+    }
+  }
+
+  <!-- Item Details -->
+  <div class="item-content">
+    <h3 class="item-name">{{ item().name }}</h3>
+
+    <div class="item-details">
+      <div class="detail">
+        <span class="label">Quantity:</span>
+        <span class="value">{{ item().quantity }} {{ item().unit }}</span>
+      </div>
+      <div class="detail">
+        <span class="label">Stored:</span>
+        <span class="value">{{ item().storageDate | date: 'MMM dd, yyyy' }}</span>
+      </div>
+      <div class="detail">
+        <span class="label">Expires:</span>
+        <span class="value">{{ item().expiryDate | date: 'MMM dd, yyyy' }}</span>
+      </div>
+
+      @if (item().notes) {
+        <div class="detail notes">
+          <span class="label">Notes:</span>
+          <span class="value">{{ item().notes }}</span>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Item Actions -->
+  <div class="item-actions">
+    <button class="btn btn-sm btn-edit" (click)="edit.emit()" title="Edit item">
+      ✏️ Edit
+    </button>
+    <button class="btn btn-sm btn-delete" (click)="delete.emit()" title="Delete item">
+      🗑️ Remove
+    </button>
+  </div>
+</div>

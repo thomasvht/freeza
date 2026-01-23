@@ -1,0 +1,86 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <h1 class="auth-title">❄️ Freeza</h1>
+    <p class="auth-subtitle">Create Your Account</p>
+
+    <form [formGroup]="signupForm" (ngSubmit)="onSignup()" class="auth-form">
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          placeholder="your@email.com"
+          class="input"
+        />
+        @if (signupForm.get('email')?.touched && signupForm.get('email')?.invalid) {
+          <span class="error">Please enter a valid email</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          placeholder="••••••••"
+          class="input"
+        />
+        @if (signupForm.get('password')?.touched && signupForm.get('password')?.invalid) {
+          <span class="error">Password must be at least 6 characters</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password</label>
+        <input
+          id="confirmPassword"
+          type="password"
+          formControlName="confirmPassword"
+          placeholder="••••••••"
+          class="input"
+        />
+        @if (signupForm.get('confirmPassword')?.touched && signupForm.get('confirmPassword')?.invalid) {
+          <span class="error">Passwords must match</span>
+        }
+      </div>
+
+      @if (errorMessage()) {
+        <div class="error-banner">
+          <p>⚠️ {{ errorMessage() }}</p>
+        </div>
+      }
+
+      <button
+        type="submit"
+        class="btn btn-primary btn-block"
+        [disabled]="!signupForm.valid || isLoading()"
+      >
+        @if (isLoading()) {
+          <span>Creating account...</span>
+        } @else {
+          <span>🔐 Sign Up</span>
+        }
+      </button>
+
+      <div class="divider">
+        <span>or</span>
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-google btn-block"
+        (click)="onSignupWithGoogle()"
+        [disabled]="isLoading()"
+      >
+        <span>🔵 Sign up with Google</span>
+      </button>
+
+      <p class="auth-link">
+        Already have an account?
+        <a (click)="onSwitchToLogin()" class="link">Sign in here</a>
+      </p>
+    </form>
+  </div>
+</div>

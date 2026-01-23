@@ -1,0 +1,19 @@
+<div class="items-section">
+  @if (items().length === 0) {
+    <div class="empty-state">
+      <p>📦 No items in your freezer yet. Add one to get started!</p>
+    </div>
+  } @else {
+    <div class="items-grid">
+      @for (item of items(); track item.id) {
+        <app-item-card
+          [item]="item"
+          [expiryStatus]="getExpiryStatus(item.expiryDate)"
+          [daysUntilExpiry]="getDaysUntilExpiry(item.expiryDate)"
+          (edit)="itemEdit.emit(item)"
+          (delete)="itemDelete.emit(item.id)"
+        />
+      }
+    </div>
+  }
+</div>

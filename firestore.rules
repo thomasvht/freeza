@@ -1,0 +1,30 @@
+rules_version='2'
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Require authentication for all database operations
+    
+    match /foodItems/{document=**} {
+      // Allow read only for authenticated users accessing their own items
+      allow read: if request.auth != null && 
+                     resource.data.userId == request.auth.uid;
+      
+      // Allow create for authenticated users with their own userId
+      allow create: if request.auth != null && 
+                       request.resource.data.userId == request.auth.uid;
+      
+      // Allow update for authenticated users of their own items
+      allow update: if request.auth != null && 
+                       resource.data.userId == request.auth.uid;
+      
+      // Allow delete for authenticated users of their own items
+      allow delete: if request.auth != null && 
+                       resource.data.userId == request.auth.uid;
+    }
+
+    // Default deny all access to other collections/documents
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
