@@ -10,6 +10,9 @@ import {
   isPositiveNumber,
   ITEM_NAME_MAX,
   ITEM_NOTES_MAX,
+  DISPLAY_NAME_MAX,
+  DRAWER_NAME_MAX,
+  PREFERENCE_MAX,
 } from './item-rules';
 import type { ItemRuleInput, ItemRuleIssue } from './item-rules';
 
@@ -144,20 +147,20 @@ export type TakeBody = z.infer<typeof TakeBodySchema>;
 export const RestoreBodySchema = z.object({ quantity: QuantitySchema.optional() });
 export type RestoreBody = z.infer<typeof RestoreBodySchema>;
 
-export const CreateDrawerBodySchema = z.object({ name: trimmed(30) });
+export const CreateDrawerBodySchema = z.object({ name: trimmed(DRAWER_NAME_MAX) });
 export type CreateDrawerBody = z.infer<typeof CreateDrawerBodySchema>;
 
-export const PatchDrawerBodySchema = z.object({ name: trimmed(30) });
+export const PatchDrawerBodySchema = z.object({ name: trimmed(DRAWER_NAME_MAX) });
 export type PatchDrawerBody = z.infer<typeof PatchDrawerBodySchema>;
 
 export const DrawerOrderBodySchema = z.object({ ids: z.array(z.string().min(1)) });
 export type DrawerOrderBody = z.infer<typeof DrawerOrderBodySchema>;
 
-export const PatchMeBodySchema = z.object({ displayName: trimmed(30) });
+export const PatchMeBodySchema = z.object({ displayName: trimmed(DISPLAY_NAME_MAX) });
 export type PatchMeBody = z.infer<typeof PatchMeBodySchema>;
 
 export const RecipesBodySchema = z.object({
-  preference: z.string().trim().max(100).optional(),
+  preference: z.string().trim().max(PREFERENCE_MAX).optional(),
   today: IsoDateSchema,
 });
 export type RecipesBody = z.infer<typeof RecipesBodySchema>;

@@ -4,12 +4,11 @@ import {
   DrawerOrderBodySchema,
   PatchDrawerBodySchema,
 } from '../../shared/api-types';
+import { MAX_ACTIVE_DRAWERS } from '../../shared/item-rules';
 import { rowToDrawerDto, type DrawerRow } from '../db';
 import type { AppEnv } from '../env';
 import { apiError } from '../errors';
 import { parseBody } from '../http';
-
-const MAX_ACTIVE_DRAWERS = 10;
 
 export const drawerRoutes = new Hono<AppEnv>();
 

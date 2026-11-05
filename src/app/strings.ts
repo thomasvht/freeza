@@ -35,9 +35,36 @@ export const S = {
   },
 
   recipes: {
+    preference: 'Preference (optional)',
+    preferencePlaceholder: 'vegetarian, kids, under 30 min',
     ask: 'What can I make?',
+    minutes: '{n} min',
+    uses: 'Uses',
+    alsoNeed: "You'll also need",
+    useSoon: 'use soon',
+    expired: 'expired',
     limit: 'Recipe ideas are resting for today – try again tomorrow.',
     failed: "Couldn't think of anything – try again.",
+    loading: 'Thinking of recipes',
+  },
+
+  settings: {
+    theme: 'Theme',
+    displayName: 'Your display name',
+    save: 'Save',
+    drawers: 'Drawers',
+    drawerName: 'Drawer name',
+    newDrawer: 'New drawer',
+    add: 'Add drawer',
+    moveUp: 'Move {name} up',
+    moveDown: 'Move {name} down',
+    remove: 'Remove {name}',
+    removeTitle: 'Remove {name}',
+    removeMove: 'Move its items to',
+    removeConfirm: 'Remove drawer',
+    cancel: 'Cancel',
+    about: 'About',
+    version: 'Version {version}',
   },
 
   status: {

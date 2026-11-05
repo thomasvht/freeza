@@ -21,11 +21,14 @@ export class ThemeService {
   }
 
   cycle(): void {
-    const next = NEXT[this._mode()];
-    this._mode.set(next);
+    this.setMode(NEXT[this._mode()]);
+  }
+
+  setMode(mode: ThemeMode): void {
+    this._mode.set(mode);
     try {
-      if (next === 'system') localStorage.removeItem(STORAGE_KEY);
-      else localStorage.setItem(STORAGE_KEY, next);
+      if (mode === 'system') localStorage.removeItem(STORAGE_KEY);
+      else localStorage.setItem(STORAGE_KEY, mode);
     } catch {
       // Storage blocked (private mode): the choice lasts for this session only.
     }

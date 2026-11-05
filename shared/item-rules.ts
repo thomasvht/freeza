@@ -6,6 +6,10 @@ import type { PackUnit, Unit } from './units';
 
 export const ITEM_NAME_MAX = 60;
 export const ITEM_NOTES_MAX = 200;
+export const PREFERENCE_MAX = 100;
+export const DRAWER_NAME_MAX = 30;
+export const DISPLAY_NAME_MAX = 30;
+export const MAX_ACTIVE_DRAWERS = 10;
 
 /** Quantities and pack sizes: finite and above 0. */
 export function isPositiveNumber(n: number): boolean {
