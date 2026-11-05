@@ -37,7 +37,7 @@ Workers AI has no local emulation. In `wrangler dev` the recipe feature calls th
 
 ### End-to-end tests
 
-`npm run e2e` builds the app, starts `wrangler dev` on port 8787 against a fresh local database (`.wrangler/e2e`, wiped on every run), and drives it with Playwright in an iPhone 14 profile on Chromium. The tests never call the recipe feature.
+`npm run e2e` builds the app, starts `wrangler dev` on port 8787 against a fresh local database (`.wrangler/e2e`, wiped on every run), and drives it with Playwright in an iPhone 14 profile on Chromium. The tests never call the recipe feature. Stop `npm run dev` first: the e2e server needs port 8787 and never reuses a running server.
 
 The first time, or after upgrading `@playwright/test`, install the matching browser:
 
@@ -110,13 +110,10 @@ Until it's set, the Worker refuses every request with `403`.
 
 ### 7. Create an API token and add the GitHub secrets
 
-1. In the dashboard open **My Profile > API Tokens > Create Token > Create Custom Token**.
-2. Permissions:
-   - Account > Workers Scripts > Edit
-   - Account > D1 > Edit
-   - Account > Workers AI > Read (Edit if the deploy complains)
-   - Zone > Workers Routes > Edit on `ki-tho.be`, which the custom domain route needs
-   - Zone > DNS > Edit on `ki-tho.be`, which creating the custom domain's DNS record needs
+1. In the dashboard open **My Profile > API Tokens > Create Token** and use the **Edit Cloudflare Workers** template.
+2. Scope it to your account and to the `ki-tho.be` zone only, then add one permission: **Account > D1 > Edit**.
+
+   If the first deploy reports a missing permission, add exactly that one and redeploy.
 3. Create the token and copy it. You only see it once.
 4. In GitHub open the repository's **Settings > Secrets and variables > Actions** and add:
    - `CLOUDFLARE_API_TOKEN`: the token
@@ -124,7 +121,12 @@ Until it's set, the Worker refuses every request with `403`.
 
 ### 8. Deploy
 
-See [Deploying](#deploying). After the first deploy, do step 6, then open <https://freeza.ki-tho.be> and sign in with a one-time PIN.
+See [Deploying](#deploying). After the first deploy, do step 6, then check the protection:
+
+- Open <https://freeza.ki-tho.be> in a private window. You must see the Cloudflare Access login (email code) before the app.
+- <https://freeza.ki-tho.be/api/health> must not return JSON until you've signed in.
+
+Then sign in with a one-time PIN.
 
 ## Deploying
 

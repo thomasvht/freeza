@@ -24,14 +24,15 @@ test('add Peas, 2 bags, Drawer 2: it appears under Drawer 2', async ({ page }) =
 
 test('take out twice removes it, Undo brings it back with quantity 1', async ({ page }) => {
   await page.goto('/');
+  const peas = page.getByRole('listitem').filter({ hasText: 'Peas' });
   const take = page.getByRole('button', { name: 'Take one Peas out' });
   await take.click();
-  await expect(page.getByText('1 bag', { exact: false }).first()).toBeVisible();
+  await expect(peas).toContainText('1 bag');
   await take.click();
-  await expect(page.getByText('Peas', { exact: true })).toBeHidden();
+  await expect(peas).toBeHidden();
   await page.getByRole('button', { name: 'Undo' }).click();
-  await expect(page.getByText('Peas', { exact: true })).toBeVisible();
-  await expect(page.getByText('1 bag', { exact: false }).first()).toBeVisible();
+  await expect(peas).toBeVisible();
+  await expect(peas).toContainText('1 bag');
 });
 
 test('search filters the list and shows the empty message', async ({ page }) => {

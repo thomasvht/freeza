@@ -14,8 +14,8 @@ const VARS = [
 const SERVER = [
   `rm -rf ${STATE_DIR}`,
   'npm run build',
-  `wrangler d1 migrations apply freeza-db --local --persist-to ${STATE_DIR}`,
-  `wrangler dev --port ${PORT} --persist-to ${STATE_DIR} ${VARS}`,
+  `npx wrangler d1 migrations apply freeza-db --local --persist-to ${STATE_DIR}`,
+  `npx wrangler dev --port ${PORT} --persist-to ${STATE_DIR} ${VARS}`,
 ].join(' && ');
 
 export default defineConfig({
