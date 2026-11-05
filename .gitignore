@@ -6,7 +6,6 @@
 /e2e/test-output/
 /.angular/
 .angular/
-.firebase/
 
 # Node modules and dependency files
 /node_modules/

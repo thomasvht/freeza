@@ -8,10 +8,13 @@
   <meta name="theme-color" content="#bfe3f7">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <script>
-    // Apply the stored theme before first paint (key shared with ThemeService).
+    // Apply the stored theme and its theme-color before first paint (key shared with ThemeService;
+    // colours are --bg-solid from styles/tokens.scss).
     try {
       var t = localStorage.getItem('freeza-theme');
       if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      var dark = t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.querySelector('meta[name="theme-color"]').content = dark ? '#0d2740' : '#bfe3f7';
     } catch (e) {}
   </script>
 </head>

@@ -101,6 +101,7 @@ export class InventoryStore {
 
   private pending = 0;
   private mutationSeq = 0;
+  private refreshAfterRollback = false;
   private pollTimer: ReturnType<typeof setInterval> | undefined;
   private readonly onVisibilityChange = () => {
     if (this.isVisible()) this.refreshQuietly();
@@ -286,12 +287,23 @@ export class InventoryStore {
     try {
       const result = await call();
       this.pending--;
+      if (this.pending === 0 && this.refreshAfterRollback) {
+        this.refreshAfterRollback = false;
+        this.refreshQuietly();
+      }
       return result;
     } catch (e) {
       this.pending--;
       this.restore(snapshot);
       this.toast.show({ message: errorMessage(e) });
-      await this.refresh().catch(() => undefined);
+      if (this.pending === 0) {
+        this.refreshAfterRollback = false;
+        await this.refresh().catch(() => undefined);
+      } else {
+        // The snapshot may undo another in-flight mutation (e.g. resurrect a deleted row), and a refresh
+        // now would be dropped; refresh once the last mutation settles.
+        this.refreshAfterRollback = true;
+      }
       throw e;
     }
   }

@@ -168,6 +168,27 @@ describe('InventoryStore', () => {
     expect(api.get).toHaveBeenCalledTimes(2);
   });
 
+  it('refreshes once the last in-flight mutation settles after a rollback', async () => {
+    const update = deferred<ItemDto>();
+    const del = deferred<void>();
+    api.patch.mockReturnValueOnce(update.promise);
+    api.delete.mockReturnValueOnce(del.promise);
+
+    const updating = store.updateItem('beef', { name: 'Steak' }); // snapshot still holds peas
+    const deleting = store.deleteItem('peas');
+
+    update.reject(new ApiError(404, 'not_found', 'Item not found'));
+    await expect(updating).rejects.toBeInstanceOf(ApiError);
+    expect(api.get).toHaveBeenCalledTimes(1); // no refresh while the delete is in flight
+
+    const fresh = inventory();
+    api.get.mockResolvedValueOnce({ ...fresh, items: fresh.items.filter((i) => i.id !== 'peas') });
+    del.resolve();
+    await deleting;
+    await vi.waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(store.items().some((i) => i.id === 'peas')).toBe(false));
+  });
+
   it('polls every 30 s while visible, not while hidden, and on becoming visible', async () => {
     vi.useFakeTimers();
     store.startPolling();
