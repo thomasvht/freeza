@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:workers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { RECIPE_DAILY_CAP, RECIPE_MODEL, buildRecipePrompt } from '../worker/recipes/prompt';
+import { RECIPE_DAILY_CAP, RECIPE_JSON_SCHEMA, RECIPE_MODEL, buildRecipePrompt } from '../worker/recipes/prompt';
 import type { ItemDto } from '../shared/api-types';
 import { createItem, json } from './fixtures';
 import { aiRun, api } from './helpers';
@@ -47,10 +47,13 @@ describe('POST /api/recipes', () => {
       { name: 'minced BEEF', itemId: expect.stringMatching(/^[0-9a-f-]{36}$/), status: 'use-soon' },
       { name: 'Unicorn', itemId: null, status: null },
     ]);
-    expect(aiRun).toHaveBeenCalledWith(
-      RECIPE_MODEL,
-      expect.objectContaining({ response_format: expect.objectContaining({ type: 'json_schema' }) }),
-    );
+    expect(aiRun).toHaveBeenCalledWith(RECIPE_MODEL, {
+      messages: [
+        expect.objectContaining({ role: 'system' }),
+        expect.objectContaining({ role: 'user' }),
+      ],
+      response_format: { type: 'json_schema', json_schema: RECIPE_JSON_SCHEMA },
+    });
   });
 
   it('accepts response as a JSON string', async () => {
@@ -87,6 +90,29 @@ describe('POST /api/recipes', () => {
     expect(res.status).toBe(429);
     expect(await res.json()).toMatchObject({ error: { code: 'ai_limit' } });
     expect(aiRun).not.toHaveBeenCalled();
+  });
+
+  it('the 20th request of the day succeeds, the 21st is limited', async () => {
+    await env.DB.prepare('INSERT INTO ai_usage (day, count) VALUES (?1, ?2)').bind(utcDay(), RECIPE_DAILY_CAP - 1).run();
+    aiRun.mockResolvedValue({ response: valid() });
+    expect((await post()).status).toBe(200);
+    expect(aiRun).toHaveBeenCalledTimes(1);
+    expect((await post()).status).toBe(429);
+    expect(aiRun).toHaveBeenCalledTimes(1);
+  });
+
+  it('matches duplicate item names to the earliest-expiring item', async () => {
+    const soon = await createItem({ name: 'Peas', bestBefore: '2026-11-08' });
+    aiRun.mockResolvedValue({ response: valid(['peas']) });
+    const body = (await (await post()).json()) as { recipes: { uses: unknown[] }[] };
+    expect(body.recipes[0]!.uses).toEqual([{ name: 'peas', itemId: soon.id, status: 'use-soon' }]);
+  });
+
+  it('does not treat a generic rate-limit error as ai_limit', async () => {
+    aiRun.mockRejectedValue(new Error('rate limit exceeded'));
+    const res = await post();
+    expect(res.status).toBe(502);
+    expect(aiRun).toHaveBeenCalledTimes(2);
   });
 
   it('increments the counter before the AI call', async () => {

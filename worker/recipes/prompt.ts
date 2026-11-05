@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { ItemDto } from '../../shared/api-types';
+import { RECIPE_COUNT, RecipeSchema, type ItemDto } from '../../shared/api-types';
 import type { IsoDate } from '../../shared/dates';
 import { expiryStatus, type ExpiryStatus } from '../../shared/expiry';
 
@@ -9,16 +9,8 @@ export const RECIPE_DAILY_CAP = 20;
 /** What the model returns: `uses` are plain item names; the route maps them to items. */
 export const ModelRecipesSchema = z.object({
   recipes: z
-    .array(
-      z.object({
-        name: z.string(),
-        minutes: z.number(),
-        uses: z.array(z.string()),
-        alsoNeed: z.array(z.string()),
-        method: z.string(),
-      }),
-    )
-    .length(3),
+    .array(RecipeSchema.omit({ uses: true }).extend({ uses: z.array(z.string()) }))
+    .length(RECIPE_COUNT),
 });
 
 export const RECIPE_JSON_SCHEMA = {
@@ -26,8 +18,8 @@ export const RECIPE_JSON_SCHEMA = {
   properties: {
     recipes: {
       type: 'array',
-      minItems: 3,
-      maxItems: 3,
+      minItems: RECIPE_COUNT,
+      maxItems: RECIPE_COUNT,
       items: {
         type: 'object',
         properties: {
@@ -47,7 +39,7 @@ export const RECIPE_JSON_SCHEMA = {
 const SYSTEM_PROMPT = `You suggest quick home-cooking ideas based on what is in the user's freezer.
 The user message is JSON with an "items" array (name, quantity, unit, optional packSize and packUnit, bestBefore, status) and an optional "preference".
 Rules:
-- Return exactly 3 recipes.
+- Return exactly ${RECIPE_COUNT} recipes.
 - Use items that are expired or "use-soon" first; use-soon means the best-before date is within 14 days.
 - Every entry in "uses" must be an item name copied exactly from the items list.
 - Keep "alsoNeed" to common ingredients most households already have.

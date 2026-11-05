@@ -18,7 +18,7 @@ import {
 } from '../recipes/prompt';
 
 // Unverified: Workers AI types/docs in node_modules document no error code or text for the daily allowance.
-const LIMIT_ERROR = /neuron|allocation|quota|limit/i;
+const LIMIT_ERROR = /4006|neurons?|daily free allocation/i;
 
 class AiLimitError extends Error {}
 
@@ -48,7 +48,9 @@ recipeRoutes.post('/', async (c) => {
   }
 
   const { messages } = buildRecipePrompt(items, today, preference);
-  const byName = new Map(items.map((i) => [i.name.toLowerCase(), i]));
+  // Items are sorted by best before, so the first per name is the earliest-expiring one.
+  const byName = new Map<string, (typeof items)[number]>();
+  for (const i of items) if (!byName.has(i.name.toLowerCase())) byName.set(i.name.toLowerCase(), i);
 
   const attempt = async (): Promise<RecipesResponse | null> => {
     let result: unknown;

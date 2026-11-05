@@ -212,7 +212,10 @@ export const RecipeSchema = z.object({
 });
 export type Recipe = z.infer<typeof RecipeSchema>;
 
-export const RecipesResponseSchema = z.object({ recipes: z.array(RecipeSchema).length(3) });
+/** Recipes per response; shared by the response schema, the model schema and the JSON schema. */
+export const RECIPE_COUNT = 3;
+
+export const RecipesResponseSchema = z.object({ recipes: z.array(RecipeSchema).length(RECIPE_COUNT) });
 export type RecipesResponse = z.infer<typeof RecipesResponseSchema>;
 
 // ---------- errors ----------
