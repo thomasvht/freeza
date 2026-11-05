@@ -109,6 +109,38 @@ describe('SettingsPage', () => {
     expect(store.renameDrawer).toHaveBeenCalledWith('drawer-2', 'Freezer door');
   });
 
+  it('renames once when Enter is followed by blur', async () => {
+    await setup();
+    const input = el.querySelectorAll<HTMLInputElement>('input.drawer-name')[1];
+    input.value = 'Door';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    input.dispatchEvent(new Event('change'));
+    input.dispatchEvent(new Event('blur'));
+    expect(store.renameDrawer).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores the drawer name when the rename is rejected', async () => {
+    await setup();
+    vi.mocked(store.renameDrawer).mockRejectedValue(new Error('x'));
+    const input = el.querySelectorAll<HTMLInputElement>('input.drawer-name')[1];
+    type(input, 'Door', 'change');
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(input.value).toBe('Drawer 2');
+  });
+
+  it('restores the display name when saving is rejected', async () => {
+    await setup();
+    vi.mocked(store.setDisplayName).mockRejectedValue(new Error('x'));
+    const input = q<HTMLInputElement>('input.display-name');
+    type(input, 'Thomas');
+    q<HTMLButtonElement>('button.save-name').click();
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+    expect(input.value).toBe('Anna');
+  });
+
   it('reorders drawers with the up and down buttons', async () => {
     await setup();
     q<HTMLButtonElement>('button[aria-label="Move Drawer 2 up"]').click();

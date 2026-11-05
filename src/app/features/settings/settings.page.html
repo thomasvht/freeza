@@ -47,7 +47,6 @@
           [attr.maxlength]="drawerNameMax"
           [value]="drawer.name"
           (change)="rename(drawer, $any($event.target))"
-          (keydown.enter)="rename(drawer, $any($event.target))"
         />
         <button
           type="button"

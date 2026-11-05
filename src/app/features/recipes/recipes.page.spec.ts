@@ -165,6 +165,30 @@ describe('RecipesPage', () => {
     expect(ask().disabled).toBe(true);
   });
 
+  it('announces loading in the status line', async () => {
+    post.mockReturnValue(new Promise(() => undefined));
+    await setup();
+    ask().click();
+    fixture.detectChanges();
+    expect(el.querySelector('[role="status"]')!.textContent).toContain('Thinking of recipes');
+  });
+
+  it('re-enables the button once items appear after an empty_freezer error', async () => {
+    post.mockRejectedValue(new ApiError(400, 'empty_freezer', 'x'));
+    await setup();
+    await press();
+    expect(ask().disabled).toBe(true);
+    const store = TestBed.inject(InventoryStore);
+    const [first] = store.items();
+    (TestBed.inject(ApiClient) as unknown as { get: () => Promise<InventoryResponse> }).get = async () => ({
+      ...inventory(true),
+      items: [first, { ...first, id: 'two' }],
+    });
+    await store.refresh();
+    fixture.detectChanges();
+    expect(ask().disabled).toBe(false);
+  });
+
   it('disables the button up front when the freezer is empty', async () => {
     await setup(false);
     expect(el.textContent).toContain('Your freezer is empty – tap + to add the first item.');

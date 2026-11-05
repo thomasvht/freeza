@@ -67,7 +67,9 @@ export class SettingsPage {
 
   protected saveName(): void {
     if (!this.canSaveName()) return;
-    this.run(this.store.setDisplayName(this.name().trim()));
+    this.run(this.store.setDisplayName(this.name().trim()), () =>
+      this.name.set(this.store.me()?.displayName ?? ''),
+    );
   }
 
   protected rename(drawer: DrawerDto, input: HTMLInputElement): void {
@@ -76,7 +78,9 @@ export class SettingsPage {
       input.value = drawer.name;
       return;
     }
-    this.run(this.store.renameDrawer(drawer.id, name));
+    this.run(this.store.renameDrawer(drawer.id, name), () => {
+      input.value = this.store.drawers().find((d) => d.id === drawer.id)?.name ?? drawer.name;
+    });
   }
 
   protected move(index: number, by: -1 | 1): void {
@@ -109,7 +113,7 @@ export class SettingsPage {
   }
 
   /** The store already toasts a failure; this only stops it surfacing as an unhandled rejection. */
-  private run(promise: Promise<unknown>): void {
-    promise.catch(() => undefined);
+  private run(promise: Promise<unknown>, onError?: () => void): void {
+    promise.catch(() => onError?.());
   }
 }

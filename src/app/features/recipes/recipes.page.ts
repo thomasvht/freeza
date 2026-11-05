@@ -28,15 +28,17 @@ export class RecipesPage {
   protected readonly loading = signal(false);
   protected readonly recipes = signal<Recipe[]>(readStored());
   private readonly error = signal<string | null>(null);
-  private readonly serverSaysEmpty = signal(false);
+  /** Item count when the server said the freezer is empty; the flag lapses once more items exist. */
+  private readonly serverEmptyAt = signal<number | null>(null);
 
   private readonly freezerEmpty = computed(
-    () => this.serverSaysEmpty() || (this.store.loaded() && this.store.items().length === 0),
+    () => (this.serverEmptyAt() !== null && this.store.items().length <= this.serverEmptyAt()!) ||
+      (this.store.loaded() && this.store.items().length === 0),
   );
   protected readonly canAsk = computed(() => !this.loading() && !this.freezerEmpty());
   /** The one status line under the button, if any. */
   protected readonly message = computed(() =>
-    this.freezerEmpty() ? S.errors.empty_freezer : this.error(),
+    this.freezerEmpty() ? S.errors.empty_freezer : this.loading() ? S.recipes.loading : this.error(),
   );
 
   protected minutes(recipe: Recipe): string {
@@ -56,7 +58,7 @@ export class RecipesPage {
       this.recipes.set(res.recipes);
       persist(res);
     } catch (e) {
-      if (e instanceof ApiError && e.code === 'empty_freezer') this.serverSaysEmpty.set(true);
+      if (e instanceof ApiError && e.code === 'empty_freezer') this.serverEmptyAt.set(this.store.items().length);
       else this.error.set(e instanceof ApiError && e.code === 'ai_limit' ? S.recipes.limit : S.recipes.failed);
     } finally {
       this.loading.set(false);
