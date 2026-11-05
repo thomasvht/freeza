@@ -117,18 +117,25 @@ itemRoutes.patch('/:id', async (c) => {
     ]);
   }
 
+  // Only write the columns present in the patch, so a concurrent take on quantity is not overwritten.
+  const COLUMNS: Record<string, string> = {
+    name: 'name', category: 'category', drawerId: 'drawer_id', quantity: 'quantity', unit: 'unit',
+    packSize: 'pack_size', packUnit: 'pack_unit', frozenOn: 'frozen_on', bestBefore: 'best_before',
+    bestBeforeManual: 'best_before_manual', notes: 'notes',
+  };
+  const sets: string[] = [];
+  const values: unknown[] = [];
+  for (const [key, value] of Object.entries(p)) {
+    if (value === undefined) continue;
+    values.push(key === 'bestBeforeManual' ? (value ? 1 : 0) : value);
+    sets.push(`${COLUMNS[key]} = ?${values.length}`);
+  }
+  values.push(c.var.email, new Date().toISOString(), cur.id);
+  const n = values.length;
+  sets.push(`updated_by = ?${n - 2}`, `updated_at = ?${n - 1}`);
   const res = await c.env.DB
-    .prepare(
-      `UPDATE items SET name = ?1, category = ?2, drawer_id = ?3, quantity = ?4, unit = ?5,
-         pack_size = ?6, pack_unit = ?7, frozen_on = ?8, best_before = ?9,
-         best_before_manual = ?10, notes = ?11, updated_by = ?12, updated_at = ?13
-       WHERE id = ?14 AND deleted_at IS NULL RETURNING *`,
-    )
-    .bind(
-      merged.name, merged.category, merged.drawerId, merged.quantity, merged.unit,
-      merged.packSize, merged.packUnit, merged.frozenOn, merged.bestBefore,
-      merged.bestBeforeManual ? 1 : 0, merged.notes, c.var.email, new Date().toISOString(), cur.id,
-    )
+    .prepare(`UPDATE items SET ${sets.join(', ')} WHERE id = ?${n} AND deleted_at IS NULL RETURNING *`)
+    .bind(...values)
     .first<ItemRow>();
   if (!res) return notFound(c);
   return c.json(rowToItemDto(res));
@@ -150,8 +157,8 @@ itemRoutes.post('/:id/take', async (c) => {
   const res = await c.env.DB
     .prepare(
       `UPDATE items
-       SET quantity   = max(quantity - ?1, 0),
-           deleted_at = CASE WHEN quantity - ?1 <= 0 THEN ?2 ELSE deleted_at END,
+       SET quantity   = max(round(quantity - ?1, 6), 0),
+           deleted_at = CASE WHEN round(quantity - ?1, 6) <= 0 THEN ?2 ELSE deleted_at END,
            updated_by = ?3, updated_at = ?2
        WHERE id = ?4 AND deleted_at IS NULL
        RETURNING *`,
@@ -202,9 +209,10 @@ itemRoutes.post('/:id/restore', async (c) => {
   const res = await c.env.DB
     .prepare(
       `UPDATE items SET deleted_at = NULL, quantity = ?1, updated_by = ?2, updated_at = ?3
-       WHERE id = ?4 RETURNING *`,
+       WHERE id = ?4 AND deleted_at IS NOT NULL RETURNING *`,
     )
     .bind(quantity, c.var.email, new Date().toISOString(), row.id)
     .first<ItemRow>();
-  return c.json(rowToItemDto(res!));
+  // No row: someone restored it in between; return the current state (idempotent).
+  return c.json(rowToItemDto(res ?? (await getRow(c, row.id))!));
 });

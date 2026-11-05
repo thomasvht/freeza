@@ -1,4 +1,4 @@
-import type { DrawerDto, ItemDto, MemberDto } from '../shared/api-types';
+import type { DrawerDto, ItemDto, MemberDto, SuggestionDto } from '../shared/api-types';
 import type { CategoryKey } from '../shared/categories';
 import type { PackUnit, Unit } from '../shared/units';
 
@@ -60,4 +60,24 @@ export function rowToDrawerDto(row: DrawerRow): DrawerDto {
 
 export function rowToMemberDto(row: MemberRow): MemberDto {
   return { email: row.email, displayName: row.display_name };
+}
+
+export interface SuggestionRow {
+  name: string;
+  category: string;
+  drawer_id: string;
+  unit: string;
+  pack_size: number | null;
+  pack_unit: string | null;
+}
+
+export function rowToSuggestionDto(row: SuggestionRow): SuggestionDto {
+  return {
+    name: row.name,
+    category: row.category as CategoryKey,
+    drawerId: row.drawer_id,
+    unit: row.unit as Unit,
+    packSize: row.pack_size,
+    packUnit: row.pack_unit as PackUnit | null,
+  };
 }

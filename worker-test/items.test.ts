@@ -133,6 +133,47 @@ describe('POST /api/items/:id/take', () => {
   });
 });
 
+describe('hardening', () => {
+  it('PATCH without quantity keeps a quantity changed by a take', async () => {
+    const item = await createItem({ quantity: 3 });
+    await send('POST', `/api/items/${item.id}/take`, {});
+    const res = await send('PATCH', `/api/items/${item.id}`, { notes: 'hello' });
+    expect(await res.json()).toMatchObject({ quantity: 2, notes: 'hello' });
+  });
+
+  it('take rounds float residue', async () => {
+    const a = await createItem({ quantity: 1.2, unit: 'kg' });
+    const r1 = await send('POST', `/api/items/${a.id}/take`, { amount: 0.4 });
+    expect(await r1.json()).toMatchObject({ item: { quantity: 0.8 } });
+    const b = await createItem({ quantity: 1.2, unit: 'kg' });
+    const r2 = await send('POST', `/api/items/${b.id}/take`, { amount: 0.5 });
+    expect(await r2.json()).toMatchObject({ item: { quantity: 0.7 } });
+  });
+
+  it('take of a stored 0.30000000000000004 by 0.3 deletes', async () => {
+    const item = await createItem({ quantity: 1, unit: 'kg' });
+    await env.DB.prepare('UPDATE items SET quantity = 0.30000000000000004 WHERE id = ?1').bind(item.id).run();
+    const res = await send('POST', `/api/items/${item.id}/take`, { amount: 0.3 });
+    expect(await res.json()).toMatchObject({ deleted: true, item: { quantity: 0 } });
+  });
+
+  it('PATCH invalid JSON is 400', async () => {
+    const item = await createItem();
+    expect((await api(`/api/items/${item.id}`, { method: 'PATCH', body: '{nope' })).status).toBe(400);
+  });
+
+  it('PATCH and take on unknown id are 404', async () => {
+    const id = crypto.randomUUID();
+    expect((await send('PATCH', `/api/items/${id}`, { notes: 'x' })).status).toBe(404);
+    expect((await send('POST', `/api/items/${id}/take`, {})).status).toBe(404);
+  });
+
+  it('create with bestBefore before frozenOn is 400', async () => {
+    const res = await api('/api/items', json(newItem({ frozenOn: '2026-10-01', bestBefore: '2026-09-01' })));
+    expect(res.status).toBe(400);
+  });
+});
+
 describe('DELETE and restore', () => {
   it('delete then restore keeps the quantity', async () => {
     const item = await createItem({ quantity: 3 });
