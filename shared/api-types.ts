@@ -177,20 +177,20 @@ export type TakeBody = z.infer<typeof TakeBodySchema>;
 export const RestoreBodySchema = z.object({ quantity: QuantitySchema.optional() });
 export type RestoreBody = z.infer<typeof RestoreBodySchema>;
 
-export const CreateDrawerBodySchema = z.object({ name: trimmed(40) });
+export const CreateDrawerBodySchema = z.object({ name: trimmed(30) });
 export type CreateDrawerBody = z.infer<typeof CreateDrawerBodySchema>;
 
-export const PatchDrawerBodySchema = z.object({ name: trimmed(40) });
+export const PatchDrawerBodySchema = z.object({ name: trimmed(30) });
 export type PatchDrawerBody = z.infer<typeof PatchDrawerBodySchema>;
 
 export const DrawerOrderBodySchema = z.object({ ids: z.array(z.string().min(1)) });
 export type DrawerOrderBody = z.infer<typeof DrawerOrderBodySchema>;
 
-export const PatchMeBodySchema = z.object({ displayName: trimmed(40) });
+export const PatchMeBodySchema = z.object({ displayName: trimmed(30) });
 export type PatchMeBody = z.infer<typeof PatchMeBodySchema>;
 
 export const RecipesBodySchema = z.object({
-  preference: z.string().trim().max(200).optional(),
+  preference: z.string().trim().max(100).optional(),
   today: IsoDateSchema,
 });
 export type RecipesBody = z.infer<typeof RecipesBodySchema>;

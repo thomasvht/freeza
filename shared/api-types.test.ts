@@ -5,6 +5,10 @@ import {
   RestoreBodySchema,
   RecipesResponseSchema,
   checkItemRules,
+  CreateDrawerBodySchema,
+  PatchDrawerBodySchema,
+  PatchMeBodySchema,
+  RecipesBodySchema,
 } from './api-types';
 
 const valid = {
@@ -107,5 +111,23 @@ describe('RecipesResponseSchema', () => {
   it('requires exactly 3 recipes', () => {
     expect(RecipesResponseSchema.safeParse({ recipes: [recipe, recipe] }).success).toBe(false);
     expect(RecipesResponseSchema.safeParse({ recipes: [recipe, recipe, recipe] }).success).toBe(true);
+  });
+});
+
+describe('length limits', () => {
+  it('drawer name 1-30', () => {
+    for (const S of [CreateDrawerBodySchema, PatchDrawerBodySchema]) {
+      expect(S.safeParse({ name: 'a'.repeat(30) }).success).toBe(true);
+      expect(S.safeParse({ name: 'a'.repeat(31) }).success).toBe(false);
+    }
+  });
+  it('displayName 1-30', () => {
+    expect(PatchMeBodySchema.safeParse({ displayName: 'a'.repeat(30) }).success).toBe(true);
+    expect(PatchMeBodySchema.safeParse({ displayName: 'a'.repeat(31) }).success).toBe(false);
+  });
+  it('preference <= 100', () => {
+    const today = '2026-11-05';
+    expect(RecipesBodySchema.safeParse({ today, preference: 'a'.repeat(100) }).success).toBe(true);
+    expect(RecipesBodySchema.safeParse({ today, preference: 'a'.repeat(101) }).success).toBe(false);
   });
 });
