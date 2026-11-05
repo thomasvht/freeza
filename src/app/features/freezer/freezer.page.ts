@@ -3,7 +3,15 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { CategoryKey } from '@shared/categories';
 import { isCountedUnit } from '@shared/units';
-import { LucideAngularModule, Monitor, Moon, Search, Settings, Snowflake, Sun } from 'lucide-angular';
+import {
+  LucideDynamicIcon,
+  LucideMonitor,
+  LucideMoon,
+  LucideSearch,
+  LucideSettings,
+  LucideSnowflake,
+  LucideSun,
+} from '@lucide/angular';
 import { InventoryStore, type Grouping, type ItemView } from '../../core/inventory.store';
 import { ThemeService, type ThemeMode } from '../../core/theme.service';
 import { fill, S } from '../../strings';
@@ -14,13 +22,16 @@ import { DrawerGroup } from './drawer-group/drawer-group';
 import { ItemCardComponent } from './item-card/item-card';
 import { UseFirstStrip } from './use-first-strip/use-first-strip';
 
-const THEME_ICONS = { system: Monitor, light: Sun, dark: Moon } as const;
+const THEME_ICONS = { system: LucideMonitor, light: LucideSun, dark: LucideMoon } as const;
 
 @Component({
   selector: 'app-freezer-page',
   imports: [
     RouterLink,
-    LucideAngularModule,
+    LucideDynamicIcon,
+    LucideSearch,
+    LucideSettings,
+    LucideSnowflake,
     CategoryChips,
     DrawerGroup,
     EmptyState,
@@ -42,7 +53,6 @@ export class FreezerPage {
   protected readonly s = S.freezer;
   protected readonly appName = S.appName;
   protected readonly settingsLabel = S.pages.settings;
-  protected readonly icons = { snowflake: Snowflake, settings: Settings, search: Search };
   protected readonly groupings: { key: Grouping; label: string }[] = [
     { key: 'drawer', label: S.freezer.byDrawer },
     { key: 'date', label: S.freezer.byDate },
@@ -52,9 +62,11 @@ export class FreezerPage {
   protected readonly themeLabel = computed(() =>
     fill(S.freezer.theme, { mode: S.freezer.themeModes[this.theme.mode() as ThemeMode] }),
   );
-  protected readonly visibleGroups = computed(() =>
-    this.store.groups().filter((g) => g.items.length > 0),
-  );
+  /** Every drawer shows (even at 0 items) until a search or category filter narrows the list. */
+  protected readonly visibleGroups = computed(() => {
+    const filtered = this.store.search().trim() !== '' || this.store.category() !== null;
+    return this.store.groups().filter((g) => !filtered || g.items.length > 0);
+  });
   protected readonly emptyMessage = computed(() => {
     const q = this.store.search().trim();
     return q === '' ? S.freezer.noCategory : fill(S.freezer.noMatches, { q });

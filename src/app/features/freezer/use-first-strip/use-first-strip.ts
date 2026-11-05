@@ -12,14 +12,16 @@ import { S } from '../../../strings';
         <h2 id="use-first" class="t-label">
           {{ label }} <span class="count">{{ items().length }}</span>
         </h2>
-        <div class="row">
+        <ul class="row" role="list">
           @for (item of items(); track item.id) {
-            <button type="button" class="tile" [class]="'tile ' + item.status" (click)="open.emit(item)">
-              <span class="name t-item">{{ item.name }}</span>
-              <span class="when">{{ daysLeft(item) }}</span>
-            </button>
+            <li>
+              <button type="button" class="tile" [class]="'tile ' + item.status" (click)="open.emit(item)">
+                <span class="name t-item">{{ item.name }}</span>
+                <span class="when">{{ daysLeft(item) }}</span>
+              </button>
+            </li>
           }
-        </div>
+        </ul>
       </section>
     }
   `,
@@ -36,13 +38,20 @@ import { S } from '../../../strings';
       display: flex;
       gap: 8px;
       overflow-x: auto;
-      padding-bottom: 4px;
+      list-style: none;
+      // Room for the 2 px focus ring + 2 px offset, which overflow-x would clip.
+      padding: 4px;
+      margin: -4px;
       scrollbar-width: none;
+    }
+
+    li {
+      display: flex;
+      flex: none;
     }
 
     .tile {
       display: grid;
-      flex: none;
       gap: 2px;
       min-width: 120px;
       max-width: 180px;

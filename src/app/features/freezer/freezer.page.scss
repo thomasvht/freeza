@@ -19,7 +19,7 @@
   gap: 8px;
   color: var(--ink);
 
-  lucide-icon {
+  svg {
     color: var(--accent);
   }
 }
@@ -87,6 +87,7 @@
 .list {
   display: grid;
   gap: 8px;
+  list-style: none;
 }
 
 app-drawer-group + app-drawer-group {

@@ -56,7 +56,14 @@ const ITEMS = [
   item({ id: 'beef', name: 'Minced beef', bestBefore: inDays(100) }),
   item({ id: 'cod', name: 'Cod', category: 'fish', drawerId: 'drawer-2', bestBefore: inDays(5) }),
   item({ id: 'bread', name: 'Bread', category: 'bread', bestBefore: inDays(-2) }),
-  item({ id: 'rice', name: 'Rice', category: 'other', unit: 'kg', quantity: 1.5, bestBefore: inDays(200) }),
+  item({
+    id: 'rice',
+    name: 'Rice',
+    category: 'other',
+    unit: 'kg',
+    quantity: 1.5,
+    bestBefore: inDays(200),
+  }),
 ];
 
 describe('FreezerPage', () => {
@@ -88,7 +95,8 @@ describe('FreezerPage', () => {
     el = harness.routeNativeElement as HTMLElement;
   }
 
-  const names = () => [...el.querySelectorAll('app-item-card .name')].map((n) => n.textContent?.trim());
+  const names = () =>
+    [...el.querySelectorAll('app-item-card .name')].map((n) => n.textContent?.trim());
   const click = (selector: string) => {
     el.querySelector<HTMLElement>(selector)!.click();
     harness.detectChanges();
@@ -131,7 +139,10 @@ describe('FreezerPage', () => {
   it('shows the Use first strip with its count, expired first', async () => {
     await setup(ITEMS);
     const tiles = [...el.querySelectorAll('app-use-first-strip .tile')];
-    expect(tiles.map((t) => t.querySelector('.name')?.textContent?.trim())).toEqual(['Bread', 'Cod']);
+    expect(tiles.map((t) => t.querySelector('.name')?.textContent?.trim())).toEqual([
+      'Bread',
+      'Cod',
+    ]);
     expect(el.querySelector('app-use-first-strip .count')?.textContent?.trim()).toBe('2');
   });
 
@@ -141,6 +152,28 @@ describe('FreezerPage', () => {
     click('[data-grouping="date"]');
     expect(el.querySelectorAll('app-drawer-group').length).toBe(0);
     expect(names()).toEqual(['Bread', 'Cod', 'Minced beef', 'Rice']);
+  });
+
+  it('shows an empty drawer with a 0 count, until a filter is active', async () => {
+    await setup([ITEMS[0]]);
+    const headers = () =>
+      [...el.querySelectorAll('app-drawer-group h2')].map((h) =>
+        h.textContent?.replace(/\s+/g, ' ').trim(),
+      );
+    expect(headers()).toEqual(['Top 1', 'Middle 0']);
+    chip('Meat').click();
+    harness.detectChanges();
+    expect(headers()).toEqual(['Top 1']);
+    chip('All').click();
+    store.search.set('beef');
+    harness.detectChanges();
+    expect(headers()).toEqual(['Top 1']);
+  });
+
+  it('renders item lists as lists', async () => {
+    await setup(ITEMS);
+    expect(el.querySelectorAll('app-drawer-group ul > li app-item-card').length).toBe(4);
+    expect(el.querySelectorAll('app-use-first-strip ul > li .tile').length).toBe(2);
   });
 
   it('filters by category chip and clears with All', async () => {
@@ -180,6 +213,16 @@ describe('FreezerPage', () => {
     click('[aria-label="Take one Minced beef out"]');
     expect(spy).toHaveBeenCalledWith('beef');
     expect(takeOutSheet.open).not.toHaveBeenCalled();
+  });
+
+  it('survives a failed take-out without an unhandled rejection', async () => {
+    await setup(ITEMS);
+    const spy = vi.spyOn(store, 'takeOut').mockRejectedValue(new Error('boom'));
+    click('[aria-label="Take one Minced beef out"]');
+    await harness.fixture.whenStable();
+    expect(spy).toHaveBeenCalledOnce();
+    click('[data-grouping="date"]');
+    expect(names().length).toBe(4);
   });
 
   it('opens the take-out sheet for a measured item', async () => {

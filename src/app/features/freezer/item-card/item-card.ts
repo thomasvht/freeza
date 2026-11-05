@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { CATEGORIES } from '@shared/categories';
-import { LucideAngularModule, Minus } from 'lucide-angular';
+import { LucideMinus } from '@lucide/angular';
 import { formatDate, formatDaysLeft, formatQuantity } from '../../../core/format';
 import type { ItemView } from '../../../core/inventory.store';
 import { fill, S } from '../../../strings';
 
 @Component({
   selector: 'app-item-card',
-  imports: [LucideAngularModule],
+  imports: [LucideMinus],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './item-card.html',
   styleUrl: './item-card.scss',
@@ -17,7 +17,6 @@ export class ItemCardComponent {
   readonly open = output<ItemView>();
   readonly take = output<ItemView>();
 
-  protected readonly minus = Minus;
   protected readonly bar = computed(() => {
     const token = CATEGORIES.find((c) => c.key === this.item().category)?.colorToken;
     return `var(${token ?? '--cat-other'})`;

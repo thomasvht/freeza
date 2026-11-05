@@ -6,6 +6,6 @@
     <span class="chip" [class]="'chip ' + item().status">{{ daysLeft() }}</span>
   </button>
   <button type="button" class="take" [attr.aria-label]="takeLabel()" (click)="take.emit(item())">
-    <lucide-icon [img]="minus" [size]="20" [strokeWidth]="2" aria-hidden="true" />
+    <svg lucideMinus [size]="20" [strokeWidth]="2" aria-hidden="true"></svg>
   </button>
 </div>

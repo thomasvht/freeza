@@ -1,18 +1,18 @@
 <header class="top">
   <h1 class="brand t-title">
-    <lucide-icon [img]="icons.snowflake" [size]="26" [strokeWidth]="2" aria-hidden="true" />
+    <svg lucideSnowflake [size]="26" [strokeWidth]="2" aria-hidden="true"></svg>
     {{ appName }}
   </h1>
   <button type="button" class="icon theme" [attr.aria-label]="themeLabel()" (click)="theme.cycle()">
-    <lucide-icon [img]="themeIcon()" [size]="22" [strokeWidth]="2" aria-hidden="true" />
+    <svg [lucideIcon]="themeIcon()" [size]="22" [strokeWidth]="2" aria-hidden="true"></svg>
   </button>
   <a class="icon settings" routerLink="/settings" [attr.aria-label]="settingsLabel">
-    <lucide-icon [img]="icons.settings" [size]="22" [strokeWidth]="2" aria-hidden="true" />
+    <svg lucideSettings [size]="22" [strokeWidth]="2" aria-hidden="true"></svg>
   </a>
 </header>
 
 <label class="search">
-  <lucide-icon [img]="icons.search" [size]="20" [strokeWidth]="2" aria-hidden="true" />
+  <svg lucideSearch [size]="20" [strokeWidth]="2" aria-hidden="true"></svg>
   <span class="visually-hidden">{{ s.search }}</span>
   <input
     type="search"
@@ -55,11 +55,11 @@
         />
       }
     } @else {
-      <div class="list">
+      <ul class="list" role="list">
         @for (item of store.filteredItems(); track item.id) {
-          <app-item-card [item]="item" (open)="open($event)" (take)="take($event)" />
+          <li><app-item-card [item]="item" (open)="open($event)" (take)="take($event)" /></li>
         }
-      </div>
+      </ul>
     }
   }
 }

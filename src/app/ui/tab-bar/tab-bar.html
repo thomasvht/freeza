@@ -6,16 +6,16 @@
     [routerLinkActiveOptions]="exactPath"
     ariaCurrentWhenActive="page"
   >
-    <lucide-icon [img]="icons.freezer" [size]="24" [strokeWidth]="2" aria-hidden="true" />
+    <svg lucideSnowflake [size]="24" [strokeWidth]="2" aria-hidden="true"></svg>
     <span>{{ s.freezer }}</span>
   </a>
 
   <button type="button" class="add" [attr.aria-label]="s.add" (click)="onAdd()">
-    <lucide-icon [img]="icons.add" [size]="28" [strokeWidth]="2" aria-hidden="true" />
+    <svg lucidePlus [size]="28" [strokeWidth]="2" aria-hidden="true"></svg>
   </button>
 
   <a class="tab" routerLink="/recipes" routerLinkActive="active" ariaCurrentWhenActive="page">
-    <lucide-icon [img]="icons.recipes" [size]="24" [strokeWidth]="2" aria-hidden="true" />
+    <svg lucideChefHat [size]="24" [strokeWidth]="2" aria-hidden="true"></svg>
     <span>{{ s.recipes }}</span>
   </a>
 </nav>

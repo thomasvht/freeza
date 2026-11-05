@@ -12,11 +12,11 @@ import { ItemCardComponent } from '../item-card/item-card';
       <h2 class="t-label">
         {{ drawer().name }} <span class="count">{{ items().length }}</span>
       </h2>
-      <div class="list">
+      <ul class="list" role="list">
         @for (item of items(); track item.id) {
-          <app-item-card [item]="item" (open)="open.emit($event)" (take)="take.emit($event)" />
+          <li><app-item-card [item]="item" (open)="open.emit($event)" (take)="take.emit($event)" /></li>
         }
-      </div>
+      </ul>
     </section>
   `,
   styles: `
@@ -31,6 +31,7 @@ import { ItemCardComponent } from '../item-card/item-card';
     .list {
       display: grid;
       gap: 8px;
+      list-style: none;
     }
   `,
 })

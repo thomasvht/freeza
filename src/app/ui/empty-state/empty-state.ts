@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { LucideAngularModule, Snowflake } from 'lucide-angular';
+import { LucideSnowflake } from '@lucide/angular';
 
 @Component({
   selector: 'app-empty-state',
-  imports: [LucideAngularModule],
+  imports: [LucideSnowflake],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <lucide-icon [img]="snowflake" [size]="56" [strokeWidth]="2" aria-hidden="true" />
+    <svg lucideSnowflake [size]="56" [strokeWidth]="2" aria-hidden="true"></svg>
     <p>{{ message() }}</p>
   `,
   styles: `
@@ -19,7 +19,6 @@ import { LucideAngularModule, Snowflake } from 'lucide-angular';
       color: var(--muted);
     }
 
-    lucide-icon,
     svg {
       color: var(--accent-ink);
     }
@@ -27,5 +26,4 @@ import { LucideAngularModule, Snowflake } from 'lucide-angular';
 })
 export class EmptyState {
   readonly message = input.required<string>();
-  protected readonly snowflake = Snowflake;
 }

@@ -31,7 +31,6 @@ export const S = {
     byDate: 'By date',
     takeOne: 'Take one {name} out',
     theme: 'Theme: {mode}. Tap to change.',
-    settings: 'Settings',
     themeModes: { system: 'System', light: 'Light', dark: 'Dark' },
   },
 

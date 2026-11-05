@@ -26,7 +26,9 @@ import { S } from '../../../strings';
       display: flex;
       gap: 8px;
       overflow-x: auto;
-      padding-bottom: 4px;
+      // Room for the 2 px focus ring + 2 px offset, which overflow-x would clip.
+      padding: 4px;
+      margin: -4px;
       scrollbar-width: none;
     }
 
