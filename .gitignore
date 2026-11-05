@@ -32,3 +32,6 @@ yarn-error.log*
 .dev.vars
 .wrangler/
 .superpowers/
+test-results/
+playwright-report/
+.wrangler/e2e

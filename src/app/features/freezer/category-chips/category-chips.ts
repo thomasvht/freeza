@@ -20,6 +20,8 @@ import { S } from '../../../strings';
   styles: `
     :host {
       display: block;
+      // Without this, the scrolling row widens the layout viewport on mobile Chromium (found by e2e).
+      contain: inline-size;
     }
 
     .row {
