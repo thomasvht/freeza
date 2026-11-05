@@ -287,6 +287,10 @@ export class InventoryStore {
 
   /** Applies `optimistic`, runs `call`; on failure restores the snapshot, toasts, refreshes and rethrows. */
   private async mutate<T>(optimistic: () => void, call: () => Promise<T>): Promise<T> {
+    if (!this.connectivity.isOnline()) {
+      this.toast.show({ message: S.status.offline });
+      throw new ApiError(0, 'network', S.status.offline);
+    }
     const snapshot = this.snapshot();
     this.mutationSeq++;
     this.pending++;

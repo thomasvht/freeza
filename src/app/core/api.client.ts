@@ -64,16 +64,27 @@ export class ApiClient {
     try {
       res = await this.fetchFn(BASE + path, init);
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Network error';
-      // A blocked cross-origin redirect to Access's login fails as a TypeError while the device is online.
-      if (e instanceof TypeError && this.connectivity.isOnline()) throw this.sessionExpired(message);
-      throw new ApiError(0, 'network', message);
+      throw new ApiError(0, 'network', e instanceof Error ? e.message : 'Network error');
     }
 
     if (res.type === 'opaqueredirect' || res.redirected) throw this.sessionExpired('Session expired');
+    if (res.status === 504 && (await this.isGatewayFailure(res))) {
+      throw new ApiError(504, 'network', 'Network error');
+    }
     if (!res.ok) throw await toApiError(res);
     if (res.status === 204) return undefined as T;
     return (await res.json()) as T;
+  }
+
+  /** The service worker answers an uncached offline request with a synthetic 504 that has no API error body. */
+  private async isGatewayFailure(res: Response): Promise<boolean> {
+    if (!this.connectivity.isOnline()) return true;
+    try {
+      const body = (await res.clone().json()) as { error?: { code?: string } };
+      return !body.error?.code;
+    } catch {
+      return true;
+    }
   }
 
   private sessionExpired(message: string): ApiError {

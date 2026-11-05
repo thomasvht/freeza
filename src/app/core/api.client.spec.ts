@@ -87,9 +87,26 @@ describe('ApiClient', () => {
       await expect(api.get('/inventory')).rejects.toMatchObject({ code: 'session_expired' });
     });
 
-    it('throws session_expired for a fetch TypeError while online', async () => {
+    it('throws network for a fetch TypeError while online', async () => {
       fetchFn.mockRejectedValueOnce(new TypeError('Failed to fetch'));
-      await expect(api.get('/inventory')).rejects.toMatchObject({ code: 'session_expired' });
+      await expect(api.get('/inventory')).rejects.toMatchObject({ code: 'network' });
+      expect(TestBed.inject(SessionService).expired()).toBe(false);
+    });
+
+    it('maps the service worker 504 to network while offline', async () => {
+      onLine = false;
+      fetchFn.mockResolvedValueOnce(new Response('Gateway Timeout', { status: 504 }));
+      await expect(api.get('/inventory')).rejects.toMatchObject({ code: 'network' });
+    });
+
+    it('maps a 504 with an empty or non-JSON body to network', async () => {
+      fetchFn.mockResolvedValueOnce(new Response(null, { status: 504 }));
+      await expect(api.get('/inventory')).rejects.toMatchObject({ code: 'network' });
+    });
+
+    it('keeps a 504 that carries an API error body', async () => {
+      fetchFn.mockResolvedValueOnce(json({ error: { code: 'internal', message: 'x' } }, 504));
+      await expect(api.get('/inventory')).rejects.toMatchObject({ code: 'internal' });
     });
 
     it('throws network for a fetch TypeError while offline', async () => {

@@ -235,12 +235,14 @@ step-by-step section):
   when `ENVIRONMENT` is anything else. A test asserts this.
 
 **Expired Access session in the PWA:** once the `CF_Authorization` cookie
-expires, Access answers API `fetch` calls with a redirect to its login page,
-which the browser blocks or turns into an opaque failure. `api.client.ts`
-treats a redirected response, an opaque response, or a CORS-type network error
-on `/api` while `navigator.onLine` is true as "session expired". It then shows
+expires, Access answers API `fetch` calls with a redirect to its login page.
+`api.client.ts` fetches with `redirect: 'manual'`, so session expiry is detected
+from an `opaqueredirect` (or redirected) response on `/api`. It then shows
 "Session expired – tap to sign in again", which reloads the page so Access can
-run its login flow.
+run its login flow. Network errors are reported as offline/network, not as an
+expired session. The service worker uses the `freshness` navigation strategy
+and leaves `/cdn-cgi/**` and `/api/**` out of navigation handling, so the reload
+reaches Access.
 
 ## 6. Recipes (Workers AI)
 

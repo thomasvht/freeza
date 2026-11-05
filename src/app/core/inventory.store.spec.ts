@@ -260,4 +260,22 @@ describe('InventoryStore polling, offline and session expiry', () => {
     await vi.advanceTimersByTimeAsync(90_000);
     expect(api.get).not.toHaveBeenCalled();
   });
+
+  it('refuses every mutation while offline, with the offline toast and no API call', async () => {
+    onLine = false;
+    const toast = TestBed.inject(ToastService);
+    const peas = store.items()[0];
+    for (const run of [
+      () => store.updateItem(peas.id, { name: 'X' }),
+      () => store.restoreItem(peas),
+      () => store.takeOut(peas.id),
+      () => store.createDrawer('Door'),
+    ]) {
+      toast.dismiss();
+      await expect(run()).rejects.toMatchObject({ code: 'network' });
+      expect(toast.current()?.message).toBe('Offline – changes are disabled');
+    }
+    expect(api.patch).not.toHaveBeenCalled();
+    expect(api.post).not.toHaveBeenCalled();
+  });
 });
