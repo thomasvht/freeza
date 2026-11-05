@@ -1,0 +1,27 @@
+<nav class="bar" [attr.aria-label]="s.label">
+  <a
+    class="tab"
+    routerLink="/"
+    routerLinkActive="active"
+    [routerLinkActiveOptions]="exactPath"
+    ariaCurrentWhenActive="page"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7" />
+      <path d="M9.5 3.5L12 6l2.5-2.5M9.5 20.5L12 18l2.5 2.5" />
+    </svg>
+    <span>{{ s.freezer }}</span>
+  </a>
+
+  <button type="button" class="add" [attr.aria-label]="s.add" (click)="onAdd()">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+  </button>
+
+  <a class="tab" routerLink="/recipes" routerLinkActive="active" ariaCurrentWhenActive="page">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6 13.9A4 4 0 0 1 7.5 6a5 5 0 0 1 9 0A4 4 0 0 1 18 13.9V20H6z" />
+      <path d="M6 17h12" />
+    </svg>
+    <span>{{ s.recipes }}</span>
+  </a>
+</nav>

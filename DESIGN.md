@@ -295,21 +295,25 @@ always under `[data-theme="dark"]`.
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `--bg` | `radial-gradient(120% 70% at 20% 0%, #ffffff 0%, #bfe3f7 40%, #7fbfe6 100%)` | `radial-gradient(120% 70% at 20% 0%, #1f4a6e 0%, #0d2740 45%, #050d18 100%)` | Page background (fixed, does not scroll) |
+| `--bg` | `radial-gradient(120% 70% at 20% 0%, #ffffff 0%, #bfe3f7 40%, #a3d3ef 100%)` | `radial-gradient(120% 70% at 20% 0%, #143653 0%, #0d2740 45%, #050d18 100%)` | Page background (fixed, does not scroll) |
 | `--bg-solid` | `#bfe3f7` | `#0d2740` | `theme-color` meta tag; fallback |
 | `--ink` | `#0b2236` | `#e9f6ff` | Main text |
-| `--muted` | `#3f6683` | `#9cc3df` | Secondary text |
-| `--glass` | `rgba(255,255,255,.45)` | `rgba(140,200,245,.12)` | Cards |
-| `--glass-strong` | `rgba(255,255,255,.62)` | `rgba(140,200,245,.18)` | Tab bar, sheets, inputs |
+| `--muted` | `#355a76` | `#a9cde6` | Secondary text |
+| `--glass` | `rgba(255,255,255,.6)` | `rgba(140,200,245,.12)` | Cards |
+| `--glass-strong` | `rgba(255,255,255,.75)` | `rgba(140,200,245,.18)` | Tab bar, sheets, inputs |
 | `--glass-border` | `rgba(255,255,255,.7)` | `rgba(180,225,255,.25)` | 1 px borders on glass |
+| `--glass-fallback` | `#e8f4fb` | `#13304a` | Solid glass without `backdrop-filter` |
 | `--blur` | `22px` | `22px` | `backdrop-filter: blur()` |
 | `--shadow` | `0 10px 30px rgba(20,80,130,.22)` | `0 12px 30px rgba(0,0,0,.45)` | Cards, tab bar |
-| `--accent` | `#0f7fc9` | `#48b0f0` | + button, primary buttons, links |
-| `--accent-ink` | `#0b5d96` | `#a8dcff` | Active tab, accent text |
+| `--accent` | `#0b6fb0` | `#5ab9f2` | + button, primary buttons, focus ring (fills, not text) |
+| `--on-accent` | `#ffffff` | `#04121f` | Text and icons on `--accent` |
+| `--accent-ink` | `#0a5288` | `#b5e2ff` | Active tab, links, accent text |
 | `--accent-soft` | `rgba(255,255,255,.5)` | `rgba(72,176,240,.18)` | − button background |
-| `--fresh` | `#1d7a5a` | `#7fdcb5` | Fresh chip text (chip background: same colour at 14–16 % alpha) |
-| `--soon` | `#a8650a` | `#f3c27a` | Use-soon chip and tile |
-| `--expired` | `#b4323f` | `#f59aa6` | Expired chip and tile |
+| `--fresh` | `#146346` | `#9ae8c8` | Fresh chip text (chip background: same colour at 14 % alpha) |
+| `--soon` | `#7f4b06` | `#f7d29a` | Use-soon chip and tile |
+| `--expired` | `#a02a36` | `#fac0c7` | Expired chip and tile |
+| `--snow` | `#ffffff` | `#ffffff` | Snow specks (decorative) |
+| `--snow-opacity` | `1` | `0.5` | Snow layer opacity (6.5) |
 
 Category colours (`--cat-*`) are mid-saturation hues that read on both
 backgrounds:
@@ -325,16 +329,30 @@ backgrounds:
 | `--cat-prepared` | `#9a7fd6` |
 | `--cat-other` | `#8a9aab` |
 
-The builder must check all values above with a contrast tool and adjust them to
-meet 6.1.2. These values are the starting point, not the end point.
+All text/background pairs above were checked against 6.1.2 (05/11/2026) and
+adjusted, worst case per theme (minimum ratio over the gradient stops, with and
+without `--glass` / `--glass-strong` on top, and the fallback):
+
+| Pair | Light | Dark |
+|---|---|---|
+| `--ink` on page / glass | 10.1 / 13.5 | 11.4 / 7.7 |
+| `--muted` on page / glass | 4.6 / 6.1 | 7.5 / 5.1 |
+| `--accent-ink` on page / glass | 5.1 / 6.8 | 9.1 / 6.2 |
+| `--fresh` / `--soon` / `--expired` on their chip over glass | 4.9 / 4.9 / 4.9 | 4.9 / 5.0 / 4.7 |
+| `--on-accent` on `--accent` | 5.4 | 8.7 |
+| `--accent` fill against page and glass (UI, 3:1) | 3.4 | 3.9 |
+
+Status chips use the status colour at 14 % alpha as background. `--accent` is a
+fill colour; text in accent colour uses `--accent-ink`. The category colours are
+decorative bars next to text and carry no text themselves.
 
 **Fallback:** when `backdrop-filter` is not supported (`@supports not`), glass
-becomes solid. Light uses `#e8f4fb` cards; dark uses `#13304a` cards.
+becomes solid `--glass-fallback`: `#e8f4fb` in light, `#13304a` in dark.
 
 ### 6.3 Typography
 
 - **Manrope**, self-hosted (bundled with the app, so it works offline), weights
-  400, 600, 700 and 800.
+  400, 500, 600, 700 and 800.
 - App title: 22 px / 800, letter-spacing −0.02 em.
 - Section labels: 11 px / 800, uppercase, letter-spacing 0.09 em, `--muted`.
 - Item name: 15 px / 700. Meta text: 12 px / 500. Body text: 15 px / 400.
