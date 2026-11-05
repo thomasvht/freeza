@@ -57,6 +57,40 @@ export const S = {
     dismiss: 'Dismiss',
   },
 
+  undo: {
+    deleted: 'Deleted {name}',
+    undo: 'Undo',
+    tookLast: 'Took the last {name} out',
+  },
+
+  sheet: {
+    addTitle: 'Add item',
+    editTitle: 'Edit item',
+    name: 'Name',
+    suggestions: 'Suggestions',
+    category: 'Category',
+    drawer: 'Drawer',
+    quantity: 'Quantity',
+    decrease: 'Decrease quantity',
+    increase: 'Increase quantity',
+    unit: 'Unit',
+    packSize: 'Pack size (optional)',
+    packUnit: 'Pack unit',
+    frozenOn: 'Frozen on',
+    bestBefore: 'Best before',
+    suggested: 'suggested',
+    notes: 'Notes (optional)',
+    save: 'Save',
+    delete: 'Delete',
+  },
+
+  takeOut: {
+    title: 'Take out {name}',
+    amount: 'Amount ({unit})',
+    confirm: 'Take out',
+    cancel: 'Cancel',
+  },
+
   errors: {
     generic: 'Something went wrong – please try again.',
     network: "Can't reach the server – check your connection.",

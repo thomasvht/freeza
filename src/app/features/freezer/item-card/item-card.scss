@@ -44,6 +44,18 @@
   grid-column: 1;
 }
 
+.qty.tick {
+  display: inline-block;
+  animation: tick 200ms ease-out;
+}
+
+@keyframes tick {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
 .chip {
   grid-column: 2;
   grid-row: 1 / span 2;

@@ -2,7 +2,12 @@
   <span class="bar" [style.--bar]="bar()"></span>
   <button type="button" class="main" (click)="open.emit(item())">
     <span class="name t-item">{{ item().name }}</span>
-    <span class="meta t-meta">{{ meta() }}</span>
+    <span class="meta t-meta">
+      @for (q of [quantity()]; track q) {
+        <span class="qty" [class.tick]="ticking()">{{ q }}</span>
+      }
+      · {{ bestBefore() }}
+    </span>
     <span class="chip" [class]="'chip ' + item().status">{{ daysLeft() }}</span>
   </button>
   <button type="button" class="take" [attr.aria-label]="takeLabel()" (click)="take.emit(item())">

@@ -17,6 +17,7 @@ import { ThemeService, type ThemeMode } from '../../core/theme.service';
 import { fill, S } from '../../strings';
 import { EmptyState } from '../../ui/empty-state/empty-state';
 import { ITEM_SHEET, TAKE_OUT_SHEET } from '../item-sheet/sheet.tokens';
+import { TakeOutUndoService } from '../item-sheet/take-out-undo.service';
 import { CategoryChips } from './category-chips/category-chips';
 import { DrawerGroup } from './drawer-group/drawer-group';
 import { ItemCardComponent } from './item-card/item-card';
@@ -47,6 +48,7 @@ export class FreezerPage {
   protected readonly theme = inject(ThemeService);
   private readonly itemSheet = inject(ITEM_SHEET);
   private readonly takeOutSheet = inject(TAKE_OUT_SHEET);
+  private readonly undo = inject(TakeOutUndoService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -95,8 +97,7 @@ export class FreezerPage {
 
   protected take(item: ItemView): void {
     if (isCountedUnit(item.unit)) {
-      // The store has already toasted and rolled back on failure.
-      this.store.takeOut(item.id).catch(() => undefined);
+      void this.undo.takeOut(item);
     } else {
       this.takeOutSheet.open(item);
     }

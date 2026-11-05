@@ -75,4 +75,14 @@ describe('ItemCardComponent', () => {
     expect(chip?.classList).toContain('expired');
     expect(chip?.textContent?.trim()).toBe('Expired');
   });
+
+  it('ticks the number over when the quantity changes, not on first render', () => {
+    const fixture = setup(view());
+    const qty = () => fixture.nativeElement.querySelector('.qty') as HTMLElement;
+    expect(qty().classList).not.toContain('tick');
+    fixture.componentRef.setInput('item', view({ quantity: 1 }));
+    fixture.detectChanges();
+    expect(qty().textContent?.trim()).toBe('1 × 500 g');
+    expect(qty().classList).toContain('tick');
+  });
 });

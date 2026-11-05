@@ -1,0 +1,25 @@
+:host {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+input {
+  width: 72px;
+  min-height: 44px;
+  padding: 0 8px;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: var(--glass-strong);
+  text-align: center;
+}
+
+.step {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}

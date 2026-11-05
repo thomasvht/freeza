@@ -1,27 +1,24 @@
 import { z } from 'zod';
 import { CATEGORY_KEYS } from './categories';
 import type { CategoryKey } from './categories';
-import { isCountedUnit, PACK_UNITS, UNITS } from './units';
+import { PACK_UNITS, UNITS } from './units';
 import type { PackUnit, Unit } from './units';
-import type { IsoDate } from './dates';
+import {
+  checkItemRules,
+  ISO_DATE_RE,
+  isIsoDate,
+  ITEM_NAME_MAX,
+  ITEM_NOTES_MAX,
+} from './item-rules';
+import type { ItemRuleInput, ItemRuleIssue } from './item-rules';
 
 // ---------- primitives ----------
-
-const ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
-
-function isRealDate(s: string): boolean {
-  const m = ISO_DATE_RE.exec(s);
-  if (!m) return false;
-  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
-  const date = new Date(Date.UTC(y, mo - 1, d));
-  return date.getUTCFullYear() === y && date.getUTCMonth() === mo - 1 && date.getUTCDate() === d;
-}
 
 /** `YYYY-MM-DD` that is also a real calendar date. */
 export const IsoDateSchema = z
   .string()
   .regex(ISO_DATE_RE, 'Expected YYYY-MM-DD')
-  .refine(isRealDate, 'Not a real calendar date');
+  .refine(isIsoDate, 'Not a real calendar date');
 
 const trimmed = (max: number) => z.string().trim().min(1).max(max);
 
@@ -29,7 +26,7 @@ const trimmed = (max: number) => z.string().trim().min(1).max(max);
 const NotesSchema = z
   .string()
   .trim()
-  .max(200)
+  .max(ITEM_NOTES_MAX)
   .transform((s) => (s === '' ? null : s))
   .nullable();
 
@@ -42,39 +39,8 @@ const ExpiryStatusSchema = z.enum(['expired', 'use-soon', 'fresh']);
 
 // ---------- cross-field item rules ----------
 
-export interface ItemRuleInput {
-  unit: Unit;
-  packSize: number | null;
-  packUnit: PackUnit | null;
-  frozenOn: IsoDate;
-  bestBefore: IsoDate;
-  quantity: number;
-}
-
-export interface ItemRuleIssue {
-  path: string;
-  message: string;
-}
-
-/** Cross-field rules for a complete item. Empty array means valid. Reused by the Worker on merged PATCH results. */
-export function checkItemRules(item: ItemRuleInput): ItemRuleIssue[] {
-  const issues: ItemRuleIssue[] = [];
-  const counted = isCountedUnit(item.unit);
-
-  if ((item.packSize === null) !== (item.packUnit === null)) {
-    issues.push({ path: 'packSize', message: 'packSize and packUnit must be set together' });
-  }
-  if (!counted && (item.packSize !== null || item.packUnit !== null)) {
-    issues.push({ path: 'packSize', message: 'packSize and packUnit are only allowed with counted units' });
-  }
-  if (counted && !Number.isInteger(item.quantity)) {
-    issues.push({ path: 'quantity', message: 'Quantity must be a whole number for counted units' });
-  }
-  if (item.bestBefore < item.frozenOn) {
-    issues.push({ path: 'bestBefore', message: 'bestBefore must not be before frozenOn' });
-  }
-  return issues;
-}
+export { checkItemRules };
+export type { ItemRuleInput, ItemRuleIssue };
 
 // ---------- DTOs ----------
 
@@ -136,7 +102,7 @@ export type InventoryResponse = z.infer<typeof InventoryResponseSchema>;
 export const CreateItemBodySchema = z
   .object({
     id: z.uuid(),
-    name: trimmed(60),
+    name: trimmed(ITEM_NAME_MAX),
     category: CategorySchema,
     drawerId: z.string().min(1),
     quantity: QuantitySchema,
@@ -157,7 +123,7 @@ export type CreateItemBody = z.infer<typeof CreateItemBodySchema>;
 
 /** Partial: cross-field rules need the merged item, so the Worker runs `checkItemRules` after merging. */
 export const PatchItemBodySchema = z.object({
-  name: trimmed(60).optional(),
+  name: trimmed(ITEM_NAME_MAX).optional(),
   category: CategorySchema.optional(),
   drawerId: z.string().min(1).optional(),
   quantity: QuantitySchema.optional(),
@@ -215,7 +181,9 @@ export type Recipe = z.infer<typeof RecipeSchema>;
 /** Recipes per response; shared by the response schema, the model schema and the JSON schema. */
 export const RECIPE_COUNT = 3;
 
-export const RecipesResponseSchema = z.object({ recipes: z.array(RecipeSchema).length(RECIPE_COUNT) });
+export const RecipesResponseSchema = z.object({
+  recipes: z.array(RecipeSchema).length(RECIPE_COUNT),
+});
 export type RecipesResponse = z.infer<typeof RecipesResponseSchema>;
 
 // ---------- errors ----------
