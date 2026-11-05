@@ -116,11 +116,26 @@ describe('PUT /api/drawers/order', () => {
 
 describe('DELETE /api/drawers/:id', () => {
   it('soft-deletes an empty drawer without moveTo', async () => {
-    const res = await send('DELETE', '/api/drawers/drawer-3?moveTo=drawer-1');
+    await env.DB.prepare('UPDATE items SET deleted_at = ?1 WHERE drawer_id = ?2 AND deleted_at IS NULL').bind('2026-01-01T00:00:00.000Z', 'drawer-3').run();
+    const res = await send('DELETE', '/api/drawers/drawer-3');
     expect(res.status).toBe(204);
     expect((await activeDrawers()).map((d) => d.id)).toEqual(['drawer-1', 'drawer-2']);
     const row = await env.DB.prepare('SELECT deleted_at FROM drawers WHERE id = ?1').bind('drawer-3').first<{ deleted_at: string | null }>();
     expect(row?.deleted_at).not.toBeNull();
+  });
+
+  it('204 without moveTo when the drawer holds only soft-deleted items', async () => {
+    const item = await createItem({ drawerId: 'drawer-3' });
+    await env.DB.prepare('UPDATE items SET deleted_at = ?1 WHERE id = ?2').bind('2026-01-01T00:00:00.000Z', item.id).run();
+    await env.DB.prepare('UPDATE items SET deleted_at = ?1 WHERE drawer_id = ?2 AND deleted_at IS NULL').bind('2026-01-01T00:00:00.000Z', 'drawer-3').run();
+    expect((await send('DELETE', '/api/drawers/drawer-3')).status).toBe(204);
+  });
+
+  it('400 when moveTo is empty', async () => {
+    await createItem({ drawerId: 'drawer-3' });
+    const res = await send('DELETE', '/api/drawers/drawer-3?moveTo=');
+    expect(res.status).toBe(400);
+    expect(await activeDrawers()).toHaveLength(3);
   });
 
   it('400 validation_failed when the drawer has items and no moveTo', async () => {

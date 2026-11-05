@@ -113,21 +113,55 @@ drawerRoutes.delete('/:id', async (c) => {
     ]);
   }
 
+  // The soft-delete is guarded so the invariants hold under races: never the last active drawer,
+  // and without moveTo never a drawer that still has active items.
   const now = new Date().toISOString();
+  const notLast = '(SELECT COUNT(*) FROM drawers WHERE deleted_at IS NULL) > 1';
   const statements = [];
   if (moveTo !== undefined) {
     statements.push(
       db
         .prepare(
           `UPDATE items SET drawer_id = ?1, updated_by = ?2, updated_at = ?3
-           WHERE drawer_id = ?4 AND deleted_at IS NULL`,
+           WHERE drawer_id = ?4 AND deleted_at IS NULL AND ${notLast}`,
         )
         .bind(moveTo, c.var.email, now, id),
     );
+    statements.push(
+      db
+        .prepare(`UPDATE drawers SET deleted_at = ?1 WHERE id = ?2 AND deleted_at IS NULL AND ${notLast}`)
+        .bind(now, id),
+    );
+  } else {
+    statements.push(
+      db
+        .prepare(
+          `UPDATE drawers SET deleted_at = ?1
+           WHERE id = ?2 AND deleted_at IS NULL AND ${notLast}
+             AND NOT EXISTS (SELECT 1 FROM items WHERE drawer_id = ?2 AND deleted_at IS NULL)`,
+        )
+        .bind(now, id),
+    );
   }
-  statements.push(
-    db.prepare('UPDATE drawers SET deleted_at = ?1 WHERE id = ?2 AND deleted_at IS NULL').bind(now, id),
-  );
-  await db.batch(statements);
+  const results = await db.batch(statements);
+  if (results[results.length - 1]!.meta.changes === 0) {
+    // A concurrent request changed the picture: re-evaluate and report the right error.
+    const [still, count, left] = await Promise.all([
+      db.prepare('SELECT 1 AS ok FROM drawers WHERE id = ?1 AND deleted_at IS NULL').bind(id).first(),
+      db.prepare('SELECT COUNT(*) AS n FROM drawers WHERE deleted_at IS NULL').first<{ n: number }>(),
+      db
+        .prepare('SELECT COUNT(*) AS n FROM items WHERE drawer_id = ?1 AND deleted_at IS NULL')
+        .bind(id)
+        .first<{ n: number }>(),
+    ]);
+    if (!still) return apiError(c, 404, 'not_found', 'Drawer not found');
+    if ((count?.n ?? 0) <= 1) return apiError(c, 409, 'last_drawer', 'The last drawer cannot be deleted');
+    if (moveTo === undefined && (left?.n ?? 0) > 0) {
+      return apiError(c, 400, 'validation_failed', 'moveTo is required when the drawer has items', [
+        { path: 'moveTo', message: 'Required when the drawer has items' },
+      ]);
+    }
+    return apiError(c, 409, 'conflict', 'Drawer changed, try again');
+  }
   return c.body(null, 204);
 });

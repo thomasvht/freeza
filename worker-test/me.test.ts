@@ -1,3 +1,4 @@
+import { env } from 'cloudflare:workers';
 import { describe, expect, it } from 'vitest';
 import { api } from './helpers';
 
@@ -23,10 +24,14 @@ describe('PATCH /api/me', () => {
   });
 
   it('updates only the caller row', async () => {
-    const before = (await inventory()).members.filter((m) => m.email !== 'thomas@example.com');
+    await env.DB
+      .prepare("INSERT OR REPLACE INTO members (email, display_name, created_at) VALUES ('other@example.com', 'Other', ?1)")
+      .bind(new Date().toISOString())
+      .run();
     await patch({ displayName: 'Solo' });
-    const after = (await inventory()).members.filter((m) => m.email !== 'thomas@example.com');
-    expect(after).toEqual(before);
+    const { members } = await inventory();
+    expect(members).toContainEqual({ email: 'other@example.com', displayName: 'Other' });
+    expect(members).toContainEqual({ email: 'thomas@example.com', displayName: 'Solo' });
   });
 
   it('400 on a 31 character name', async () => {
