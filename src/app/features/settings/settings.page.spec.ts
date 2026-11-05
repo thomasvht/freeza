@@ -215,4 +215,21 @@ describe('SettingsPage', () => {
     await setup();
     expect(el.textContent).toContain(`Version ${version}`);
   });
+
+  it('disables every drawer and name mutation while offline', async () => {
+    const spy = vi.spyOn(Navigator.prototype, 'onLine', 'get').mockReturnValue(false);
+    try {
+      await setup();
+      type(q<HTMLInputElement>('input.display-name'), 'Thomas');
+      type(q<HTMLInputElement>('input.new-drawer'), 'Door');
+      expect(q<HTMLButtonElement>('button.save-name').disabled).toBe(true);
+      expect(q<HTMLButtonElement>('button.add-drawer').disabled).toBe(true);
+      const mutating = el.querySelectorAll<HTMLButtonElement>('.drawers button');
+      expect(mutating.length).toBeGreaterThan(0);
+      mutating.forEach((b) => expect(b.disabled).toBe(true));
+      el.querySelectorAll<HTMLInputElement>('input.drawer-name').forEach((i) => expect(i.disabled).toBe(true));
+    } finally {
+      spy.mockRestore();
+    }
+  });
 });

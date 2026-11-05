@@ -45,6 +45,7 @@
           autocomplete="off"
           [attr.aria-label]="s.drawerName"
           [attr.maxlength]="drawerNameMax"
+          [disabled]="!online()"
           [value]="drawer.name"
           (change)="rename(drawer, $any($event.target))"
         />
@@ -52,7 +53,7 @@
           type="button"
           class="icon"
           [attr.aria-label]="label(s.moveUp, drawer)"
-          [disabled]="first"
+          [disabled]="!online() || first"
           (click)="move(i, -1)"
         >
           <svg lucideArrowUp [size]="20" [strokeWidth]="2" aria-hidden="true"></svg>
@@ -61,7 +62,7 @@
           type="button"
           class="icon"
           [attr.aria-label]="label(s.moveDown, drawer)"
-          [disabled]="last"
+          [disabled]="!online() || last"
           (click)="move(i, 1)"
         >
           <svg lucideArrowDown [size]="20" [strokeWidth]="2" aria-hidden="true"></svg>
@@ -70,7 +71,7 @@
           type="button"
           class="icon danger"
           [attr.aria-label]="label(s.remove, drawer)"
-          [disabled]="onlyOne()"
+          [disabled]="!online() || onlyOne()"
           (click)="remove(drawer)"
         >
           <svg lucideTrash2 [size]="20" [strokeWidth]="2" aria-hidden="true"></svg>
@@ -113,7 +114,7 @@
       <button type="button" class="cancel cancel-remove" (click)="removing.set(null)">
         {{ s.cancel }}
       </button>
-      <button type="button" class="primary confirm-remove" (click)="confirmRemove()">
+      <button type="button" class="primary confirm-remove" [disabled]="!online()" (click)="confirmRemove()">
         {{ s.removeConfirm }}
       </button>
     </ng-container>

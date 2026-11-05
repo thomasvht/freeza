@@ -2,6 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import type { DrawerDto, InventoryResponse, ItemDto } from '@shared/api-types';
 import { todayLocal } from '@shared/dates';
 import { ApiClient, ApiError } from './api.client';
+import { ONLINE_PROBE } from './connectivity.service';
+import { RELOAD_PAGE, SessionService } from './session.service';
 import { InventoryStore } from './inventory.store';
 import { ToastService } from './toast.service';
 
@@ -210,5 +212,52 @@ describe('InventoryStore', () => {
     store.stopPolling();
     await vi.advanceTimersByTimeAsync(60_000);
     expect(api.get).toHaveBeenCalledTimes(4);
+  });
+});
+
+describe('InventoryStore polling, offline and session expiry', () => {
+  let api: ReturnType<typeof fakeApi>;
+  let store: InventoryStore;
+  let onLine: boolean;
+
+  beforeEach(async () => {
+    onLine = true;
+    api = fakeApi();
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: ApiClient, useValue: api },
+        { provide: ONLINE_PROBE, useValue: () => onLine },
+        { provide: RELOAD_PAGE, useValue: () => undefined },
+      ],
+    });
+    store = TestBed.inject(InventoryStore);
+    await store.refresh();
+    vi.useFakeTimers();
+    store.startPolling();
+    await vi.advanceTimersByTimeAsync(0);
+    api.get.mockClear();
+  });
+
+  afterEach(() => {
+    store.stopPolling();
+    vi.useRealTimers();
+  });
+
+  it('skips polling while offline and refreshes once when back online', async () => {
+    onLine = false;
+    window.dispatchEvent(new Event('offline'));
+    await vi.advanceTimersByTimeAsync(90_000);
+    expect(api.get).not.toHaveBeenCalled();
+
+    onLine = true;
+    window.dispatchEvent(new Event('online'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(api.get).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops polling once the session has expired', async () => {
+    TestBed.inject(SessionService).markExpired();
+    await vi.advanceTimersByTimeAsync(90_000);
+    expect(api.get).not.toHaveBeenCalled();
   });
 });

@@ -20,6 +20,7 @@ import {
   type PackUnit,
   type Unit,
 } from '@shared/units';
+import { ConnectivityService } from '../../core/connectivity.service';
 import { InventoryStore } from '../../core/inventory.store';
 import { ToastService } from '../../core/toast.service';
 import { fill, S } from '../../strings';
@@ -44,6 +45,7 @@ function toText(n: number): string {
 })
 export class ItemSheetComponent {
   private readonly store = inject(InventoryStore);
+  protected readonly online = inject(ConnectivityService).online;
   private readonly sheet = inject(ItemSheetService);
   private readonly toast = inject(ToastService);
 
@@ -125,7 +127,7 @@ export class ItemSheetComponent {
       checkItemRules(body).length === 0;
     return valid ? body : null;
   });
-  protected readonly canSave = computed(() => this.parsed() !== null);
+  protected readonly canSave = computed(() => this.online() && this.parsed() !== null);
 
   private readonly suggestOpen = signal(false);
   protected readonly activeIndex = signal(-1);
@@ -192,7 +194,7 @@ export class ItemSheetComponent {
 
   protected save(): void {
     const body = this.parsed();
-    if (body === null) return;
+    if (body === null || !this.online()) return;
     const { id, ...patch } = body;
     this.sheet.close();
     const done = this.item ? this.store.updateItem(id, patch) : this.store.createItem(body);
@@ -201,7 +203,7 @@ export class ItemSheetComponent {
   }
 
   protected delete(): void {
-    if (!this.item) return;
+    if (!this.item || !this.online()) return;
     this.sheet.close();
     this.store
       .deleteItem(this.item.id)

@@ -120,3 +120,8 @@ textarea {
   color: var(--expired);
   font-weight: 700;
 }
+
+.delete:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

@@ -10,6 +10,7 @@ import type { DrawerDto } from '@shared/api-types';
 import { DISPLAY_NAME_MAX, DRAWER_NAME_MAX, MAX_ACTIVE_DRAWERS } from '@shared/item-rules';
 import { LucideArrowDown, LucideArrowUp, LucideTrash2 } from '@lucide/angular';
 import { version } from '../../../../package.json';
+import { ConnectivityService } from '../../core/connectivity.service';
 import { InventoryStore } from '../../core/inventory.store';
 import { ThemeService, type ThemeMode } from '../../core/theme.service';
 import { fill, S } from '../../strings';
@@ -25,6 +26,7 @@ import { Sheet } from '../../ui/sheet/sheet';
 export class SettingsPage {
   protected readonly store = inject(InventoryStore);
   protected readonly theme = inject(ThemeService);
+  protected readonly online = inject(ConnectivityService).online;
 
   protected readonly s = S.settings;
   protected readonly title = S.pages.settings;
@@ -40,12 +42,12 @@ export class SettingsPage {
   protected readonly name = linkedSignal(() => this.store.me()?.displayName ?? '');
   protected readonly canSaveName = computed(() => {
     const name = this.name().trim();
-    return name !== '' && name !== this.store.me()?.displayName;
+    return this.online() && name !== '' && name !== this.store.me()?.displayName;
   });
 
   protected readonly newDrawer = signal('');
   protected readonly canAdd = computed(
-    () => this.newDrawer().trim() !== '' && this.store.drawers().length < MAX_ACTIVE_DRAWERS,
+    () => this.online() && this.newDrawer().trim() !== '' && this.store.drawers().length < MAX_ACTIVE_DRAWERS,
   );
 
   protected readonly sorted = computed(() =>
@@ -73,6 +75,7 @@ export class SettingsPage {
   }
 
   protected rename(drawer: DrawerDto, input: HTMLInputElement): void {
+    if (!this.online()) return;
     const name = input.value.trim();
     if (name === '' || name === drawer.name) {
       input.value = drawer.name;
@@ -84,6 +87,7 @@ export class SettingsPage {
   }
 
   protected move(index: number, by: -1 | 1): void {
+    if (!this.online()) return;
     const ids = this.sorted().map((d) => d.id);
     const swap = index + by;
     if (swap < 0 || swap >= ids.length) return;
@@ -99,7 +103,7 @@ export class SettingsPage {
   }
 
   protected remove(drawer: DrawerDto): void {
-    if (this.onlyOne()) return;
+    if (!this.online() || this.onlyOne()) return;
     if (this.store.items().some((i) => i.drawerId === drawer.id)) this.removing.set(drawer);
     else this.run(this.store.deleteDrawer(drawer.id));
   }
@@ -107,7 +111,7 @@ export class SettingsPage {
   protected confirmRemove(): void {
     const drawer = this.removing();
     const target = this.target();
-    if (!drawer || !target) return;
+    if (!drawer || !target || !this.online()) return;
     this.removing.set(null);
     this.run(this.store.deleteDrawer(drawer.id, target));
   }

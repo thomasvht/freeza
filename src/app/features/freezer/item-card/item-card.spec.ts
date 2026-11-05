@@ -1,4 +1,6 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { ConnectivityService } from '../../../core/connectivity.service';
 import type { ItemView } from '../../../core/inventory.store';
 import { ItemCardComponent } from './item-card';
 
@@ -84,5 +86,20 @@ describe('ItemCardComponent', () => {
     fixture.detectChanges();
     expect(qty().textContent?.trim()).toBe('1 × 500 g');
     expect(qty().classList).toContain('tick');
+  });
+});
+
+describe('ItemCardComponent offline', () => {
+  it('disables − while offline', () => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: ConnectivityService, useValue: { online: signal(false) } }],
+    });
+    const fixture = setup(view());
+    expect(fixture.nativeElement.querySelector('.take').disabled).toBe(true);
+  });
+
+  it('enables − while online', () => {
+    const fixture = setup(view());
+    expect(fixture.nativeElement.querySelector('.take').disabled).toBe(false);
   });
 });

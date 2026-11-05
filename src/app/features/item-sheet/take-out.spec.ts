@@ -172,5 +172,16 @@ describe('take out with undo', () => {
       );
       expect(sheet.isOpen()).toBe(false);
     });
+
+    it('disables Confirm while offline', async () => {
+      const spy = vi.spyOn(Navigator.prototype, 'onLine', 'get').mockReturnValue(false);
+      try {
+        await open(RICE);
+        type('1');
+        expect(confirm().disabled).toBe(true);
+      } finally {
+        spy.mockRestore();
+      }
+    });
   });
 });

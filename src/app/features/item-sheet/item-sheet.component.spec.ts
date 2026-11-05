@@ -349,4 +349,15 @@ describe('ItemSheetComponent', () => {
     fixture.detectChanges();
     expect(document.activeElement).toBe(opener);
   });
+
+  it('disables Save and Delete while offline', async () => {
+    const spy = vi.spyOn(Navigator.prototype, 'onLine', 'get').mockReturnValue(false);
+    try {
+      await open(BEEF);
+      expect(save().disabled).toBe(true);
+      expect(q<HTMLButtonElement>('button.delete').disabled).toBe(true);
+    } finally {
+      spy.mockRestore();
+    }
+  });
 });

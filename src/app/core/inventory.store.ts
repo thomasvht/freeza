@@ -13,6 +13,8 @@ import { daysBetween, todayLocal, type IsoDate } from '@shared/dates';
 import { expiryStatus, type ExpiryStatus } from '@shared/expiry';
 import { S } from '../strings';
 import { ApiClient, ApiError } from './api.client';
+import { ConnectivityService } from './connectivity.service';
+import { SessionService } from './session.service';
 import { ToastService } from './toast.service';
 
 export type ItemView = ItemDto & {
@@ -39,6 +41,8 @@ export class InventoryStore {
   private readonly api = inject(ApiClient);
   private readonly toast = inject(ToastService);
   private readonly document = inject(DOCUMENT);
+  private readonly connectivity = inject(ConnectivityService);
+  private readonly session = inject(SessionService);
 
   private readonly _drawers = signal<DrawerDto[]>([]);
   private readonly _items = signal<ItemDto[]>([]);
@@ -106,6 +110,7 @@ export class InventoryStore {
   private readonly onVisibilityChange = () => {
     if (this.isVisible()) this.refreshQuietly();
   };
+  private readonly onOnline = () => this.refreshQuietly();
 
   async refresh(): Promise<void> {
     const seq = this.mutationSeq;
@@ -128,12 +133,14 @@ export class InventoryStore {
       if (this.isVisible()) this.refreshQuietly();
     }, POLL_MS);
     this.document.addEventListener('visibilitychange', this.onVisibilityChange);
+    this.document.defaultView?.addEventListener('online', this.onOnline);
   }
 
   stopPolling(): void {
     clearInterval(this.pollTimer);
     this.pollTimer = undefined;
     this.document.removeEventListener('visibilitychange', this.onVisibilityChange);
+    this.document.defaultView?.removeEventListener('online', this.onOnline);
   }
 
   // ---------- items ----------
@@ -328,6 +335,8 @@ export class InventoryStore {
   }
 
   private refreshQuietly(): void {
+    // No calls while offline (the `online` event refreshes once) or once the session has expired.
+    if (!this.connectivity.isOnline() || this.session.expired()) return;
     // Polling failures are silent; the next tick or a mutation retries.
     this.refresh().catch(() => undefined);
   }

@@ -10,7 +10,7 @@
     <span>{{ s.freezer }}</span>
   </a>
 
-  <button type="button" class="add" [attr.aria-label]="s.add" (click)="onAdd()">
+  <button type="button" class="add" [attr.aria-label]="s.add" [disabled]="!connectivity.online()" (click)="onAdd()">
     <svg lucidePlus [size]="28" [strokeWidth]="2" aria-hidden="true"></svg>
   </button>
 

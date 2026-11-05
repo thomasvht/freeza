@@ -87,3 +87,8 @@
   background: var(--accent-soft);
   color: var(--accent-ink);
 }
+
+.take:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

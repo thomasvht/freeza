@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import type { Recipe, RecipesBody, RecipesResponse } from '@shared/api-types';
 import { PREFERENCE_MAX } from '@shared/item-rules';
 import { ApiClient, ApiError } from '../../core/api.client';
+import { ConnectivityService } from '../../core/connectivity.service';
 import { InventoryStore } from '../../core/inventory.store';
 import { fill, S } from '../../strings';
 
@@ -18,6 +19,7 @@ const SKELETONS = [0, 1, 2];
 export class RecipesPage {
   private readonly api = inject(ApiClient);
   private readonly store = inject(InventoryStore);
+  private readonly online = inject(ConnectivityService).online;
 
   protected readonly s = S.recipes;
   protected readonly title = S.pages.recipes;
@@ -35,7 +37,7 @@ export class RecipesPage {
     () => (this.serverEmptyAt() !== null && this.store.items().length <= this.serverEmptyAt()!) ||
       (this.store.loaded() && this.store.items().length === 0),
   );
-  protected readonly canAsk = computed(() => !this.loading() && !this.freezerEmpty());
+  protected readonly canAsk = computed(() => this.online() && !this.loading() && !this.freezerEmpty());
   /** The one status line under the button, if any. */
   protected readonly message = computed(() =>
     this.freezerEmpty() ? S.errors.empty_freezer : this.loading() ? S.recipes.loading : this.error(),

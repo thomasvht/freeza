@@ -2,12 +2,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   input,
   linkedSignal,
   output,
 } from '@angular/core';
 import { CATEGORIES } from '@shared/categories';
 import { LucideMinus } from '@lucide/angular';
+import { ConnectivityService } from '../../../core/connectivity.service';
 import { formatDate, formatDaysLeft, formatQuantity } from '../../../core/format';
 import type { ItemView } from '../../../core/inventory.store';
 import { fill, S } from '../../../strings';
@@ -20,6 +22,7 @@ import { fill, S } from '../../../strings';
   styleUrl: './item-card.scss',
 })
 export class ItemCardComponent {
+  protected readonly online = inject(ConnectivityService).online;
   readonly item = input.required<ItemView>();
   readonly open = output<ItemView>();
   readonly take = output<ItemView>();

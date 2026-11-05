@@ -4,6 +4,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { parseDecimal } from '@shared/decimal';
 import { isPositiveNumber } from '@shared/item-rules';
 import { UNIT_LABELS } from '@shared/units';
+import { ConnectivityService } from '../../core/connectivity.service';
 import { InventoryStore } from '../../core/inventory.store';
 import { fill, S } from '../../strings';
 import { Sheet } from '../../ui/sheet/sheet';
@@ -33,7 +34,7 @@ import { TakeOutUndoService } from './take-out-undo.service';
       </div>
       <ng-container footer>
         <button type="button" class="cancel" (click)="close()">{{ s.cancel }}</button>
-        <button type="button" class="confirm" [disabled]="parsed() === null" (click)="submit()">
+        <button type="button" class="confirm" [disabled]="!online() || parsed() === null" (click)="submit()">
           {{ s.confirm }}
         </button>
       </ng-container>
@@ -44,6 +45,7 @@ import { TakeOutUndoService } from './take-out-undo.service';
 export class TakeOutSheetComponent {
   private readonly sheet = inject(TakeOutSheetService);
   private readonly store = inject(InventoryStore);
+  protected readonly online = inject(ConnectivityService).online;
   private readonly undo = inject(TakeOutUndoService);
   private readonly item = this.sheet.item()!;
 
@@ -65,7 +67,7 @@ export class TakeOutSheetComponent {
 
   protected submit(): void {
     const amount = this.parsed();
-    if (amount === null) return;
+    if (amount === null || !this.online()) return;
     this.sheet.close();
     void this.undo.takeOut(this.item, amount);
   }

@@ -6,6 +6,7 @@ import { ItemSheetService } from './features/item-sheet/item-sheet.service';
 import { TakeOutSheetComponent } from './features/item-sheet/take-out-sheet.component';
 import { TakeOutSheetService } from './features/item-sheet/take-out-sheet.service';
 import { ThemeService } from './core/theme.service';
+import { OfflineBanner } from './ui/offline-banner/offline-banner';
 import { TabBar } from './ui/tab-bar/tab-bar';
 import { ToastHost } from './ui/toast-host/toast-host';
 
@@ -14,7 +15,7 @@ const SNOW = [1, 2, 3, 4, 5, 6, 7, 8];
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, TabBar, ToastHost, ItemSheetComponent, TakeOutSheetComponent],
+  imports: [RouterOutlet, OfflineBanner, TabBar, ToastHost, ItemSheetComponent, TakeOutSheetComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="snow" aria-hidden="true">
@@ -22,6 +23,7 @@ const SNOW = [1, 2, 3, 4, 5, 6, 7, 8];
         <span></span>
       }
     </div>
+    <app-offline-banner />
     <main>
       <router-outlet />
     </main>

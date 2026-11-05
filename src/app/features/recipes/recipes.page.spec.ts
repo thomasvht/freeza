@@ -218,4 +218,14 @@ describe('RecipesPage', () => {
     await setup();
     expect(el.querySelectorAll('.recipe')).toHaveLength(0);
   });
+
+  it('disables the ask button while offline', async () => {
+    const spy = vi.spyOn(Navigator.prototype, 'onLine', 'get').mockReturnValue(false);
+    try {
+      await setup();
+      expect(ask().disabled).toBe(true);
+    } finally {
+      spy.mockRestore();
+    }
+  });
 });

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, output } from '@angular/core';
 import { IsActiveMatchOptions, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { LucideChefHat, LucidePlus, LucideSnowflake } from '@lucide/angular';
+import { ConnectivityService } from '../../core/connectivity.service';
 import { S } from '../../strings';
 
 @Component({
@@ -12,6 +13,7 @@ import { S } from '../../strings';
 })
 export class TabBar {
   private readonly router = inject(Router);
+  protected readonly connectivity = inject(ConnectivityService);
 
   /** Emitted when + is tapped, before navigating to `/?add=1`. */
   readonly add = output<void>();
