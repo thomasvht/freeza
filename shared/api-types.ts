@@ -228,7 +228,8 @@ export type ApiErrorCode =
   | 'drawer_gone'
   | 'ai_limit'
   | 'empty_freezer'
-  | 'recipes_failed';
+  | 'recipes_failed'
+  | 'internal';
 
 export const ApiErrorSchema = z.object({
   error: z.object({

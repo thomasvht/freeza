@@ -32,6 +32,8 @@
     "@angular/platform-browser": "^21.1.0",
     "@angular/router": "^21.1.0",
     "firebase": "^12.8.0",
+    "hono": "^4.13.16",
+    "jose": "^6.2.15",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zod": "^4.6.7"

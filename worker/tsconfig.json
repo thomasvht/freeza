@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "lib": ["ES2022"],
+    "types": ["@cloudflare/vitest-pool-workers/types"],
+    "paths": { "@shared/*": ["../shared/*"] }
+  },
+  "include": [
+    "./**/*.ts",
+    "../worker-test/**/*.ts",
+    "../shared/**/*.ts",
+    "../worker-configuration.d.ts"
+  ]
+}
