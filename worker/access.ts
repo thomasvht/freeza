@@ -40,18 +40,26 @@ export function accessAuth(): MiddlewareHandler<AppEnv> {
       }
       email = c.env.DEV_USER_EMAIL;
     } else {
+      if (!c.env.ACCESS_AUD || !c.env.ACCESS_TEAM_DOMAIN) {
+        console.error('ACCESS_AUD or ACCESS_TEAM_DOMAIN is missing: refusing every request');
+        return apiError(c, 500, 'internal', 'Server misconfigured');
+      }
       const token = c.req.header('Cf-Access-Jwt-Assertion');
       if (!token) return apiError(c, 401, 'unauthorized', 'Missing access token');
       try {
         const { payload } = await jwtVerify(token, getJwks(c.env.ACCESS_TEAM_DOMAIN), {
           issuer: `https://${c.env.ACCESS_TEAM_DOMAIN}`,
           audience: c.env.ACCESS_AUD,
+          algorithms: ['RS256'],
+          requiredClaims: ['exp'],
         });
         if (typeof payload['email'] !== 'string' || payload['email'] === '') {
           return apiError(c, 401, 'unauthorized', 'Invalid access token');
         }
         email = payload['email'];
-      } catch {
+      } catch (err) {
+        const e = err instanceof Error ? err : new Error(String(err));
+        console.warn(`Access token rejected: ${e.name}: ${e.message}`);
         return apiError(c, 401, 'unauthorized', 'Invalid access token');
       }
       if (!isAllowed(email, c.env.ALLOWED_EMAILS)) {

@@ -4,13 +4,8 @@
     "composite": false,
     "noEmit": true,
     "lib": ["ES2022"],
-    "types": ["@cloudflare/vitest-pool-workers/types"],
+    "types": [],
     "paths": { "@shared/*": ["../shared/*"] }
   },
-  "include": [
-    "./**/*.ts",
-    "../worker-test/**/*.ts",
-    "../shared/**/*.ts",
-    "../worker-configuration.d.ts"
-  ]
+  "include": ["./**/*.ts", "../shared/**/*.ts", "../worker-configuration.d.ts"]
 }

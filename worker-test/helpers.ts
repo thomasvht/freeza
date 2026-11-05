@@ -31,15 +31,34 @@ export async function signTestJwt(claims: {
   aud?: string;
   iss?: string;
   expSecondsFromNow?: number;
+  /** Leave out the `exp` claim entirely. */
+  omitExp?: boolean;
+  /** Sign with this key instead of the trusted one (still uses the trusted `kid`). */
+  signingKey?: CryptoKey;
 }): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
-  return new SignJWT({ email: claims.email })
+  const jwt = new SignJWT({ email: claims.email })
     .setProtectedHeader({ alg: 'RS256', kid: 'test-key' })
     .setAudience(claims.aud ?? ACCESS_TEST_ENV.ACCESS_AUD)
     .setIssuer(claims.iss ?? `https://${ACCESS_TEST_ENV.ACCESS_TEAM_DOMAIN}`)
-    .setIssuedAt(now - 10)
-    .setExpirationTime(now + (claims.expSecondsFromNow ?? 300))
-    .sign(keyPair.privateKey);
+    .setIssuedAt(now - 10);
+  if (!claims.omitExp) jwt.setExpirationTime(now + (claims.expSecondsFromNow ?? 300));
+  return jwt.sign(claims.signingKey ?? keyPair.privateKey);
+}
+
+/** A key pair the JWKS does not trust. */
+export const untrustedPrivateKey = (await generateKeyPair('RS256')).privateKey;
+
+/** Replace the email claim but keep the header and signature of `token`. */
+export function tamperEmail(token: string, email: string): string {
+  const [header, payload, signature] = token.split('.');
+  const claims = JSON.parse(atob(payload!.replace(/-/g, '+').replace(/_/g, '/')));
+  claims.email = email;
+  const encoded = btoa(JSON.stringify(claims))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+  return `${header}.${encoded}.${signature}`;
 }
 
 export function api(
