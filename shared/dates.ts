@@ -26,7 +26,7 @@ export function addMonths(d: IsoDate, months: number): IsoDate {
   const { y, m, day } = parse(d);
   const index = y * 12 + (m - 1) + months;
   const ty = Math.floor(index / 12);
-  const tm = (index % 12) + 1;
+  const tm = (((index % 12) + 12) % 12) + 1;
   const lastDay = new Date(Date.UTC(ty, tm, 0)).getUTCDate();
   return format(ty, tm, Math.min(day, lastDay));
 }

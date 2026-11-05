@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { CategoryKey } from './categories';
 import { expiryStatus, suggestBestBefore } from './expiry';
 
 describe('expiryStatus', () => {
@@ -17,5 +18,10 @@ describe('suggestBestBefore', () => {
   it('adds the category shelf life', () => {
     expect(suggestBestBefore('2026-11-05', 'meat')).toBe('2027-05-05');
     expect(suggestBestBefore('2026-11-05', 'bread')).toBe('2027-02-05');
+  });
+  it('throws on an unknown category', () => {
+    expect(() => suggestBestBefore('2026-11-05', 'nope' as CategoryKey)).toThrow(
+      'Unknown category: nope',
+    );
   });
 });

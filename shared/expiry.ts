@@ -13,6 +13,7 @@ export function expiryStatus(bestBefore: IsoDate, today: IsoDate): ExpiryStatus 
 }
 
 export function suggestBestBefore(frozenOn: IsoDate, category: CategoryKey): IsoDate {
-  const months = CATEGORIES.find((c) => c.key === category)!.shelfLifeMonths;
-  return addMonths(frozenOn, months);
+  const found = CATEGORIES.find((c) => c.key === category);
+  if (!found) throw new Error(`Unknown category: ${category}`);
+  return addMonths(frozenOn, found.shelfLifeMonths);
 }
