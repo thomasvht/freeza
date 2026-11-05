@@ -5,7 +5,13 @@ import type { CreateItemBody, SuggestionDto } from '@shared/api-types';
 import { CATEGORIES, type CategoryKey } from '@shared/categories';
 import { parseDecimal } from '@shared/decimal';
 import { suggestBestBefore } from '@shared/expiry';
-import { checkItemRules, isIsoDate, ITEM_NAME_MAX, ITEM_NOTES_MAX } from '@shared/item-rules';
+import {
+  checkItemRules,
+  isIsoDate,
+  isPositiveNumber,
+  ITEM_NAME_MAX,
+  ITEM_NOTES_MAX,
+} from '@shared/item-rules';
 import {
   isCountedUnit,
   PACK_UNITS,
@@ -112,8 +118,8 @@ export class ItemSheetComponent {
       notes.length <= ITEM_NOTES_MAX &&
       f.drawerId !== '' &&
       quantity !== null &&
-      quantity > 0 &&
-      (packBlank || (packSize !== null && packSize > 0)) &&
+      isPositiveNumber(quantity) &&
+      (packBlank || (packSize !== null && isPositiveNumber(packSize))) &&
       isIsoDate(f.frozenOn) &&
       isIsoDate(f.bestBefore) &&
       checkItemRules(body).length === 0;

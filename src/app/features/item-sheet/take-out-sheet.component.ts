@@ -2,7 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { parseDecimal } from '@shared/decimal';
+import { isPositiveNumber } from '@shared/item-rules';
 import { UNIT_LABELS } from '@shared/units';
+import { InventoryStore } from '../../core/inventory.store';
 import { fill, S } from '../../strings';
 import { Sheet } from '../../ui/sheet/sheet';
 import { TakeOutSheetService } from './take-out-sheet.service';
@@ -41,6 +43,7 @@ import { TakeOutUndoService } from './take-out-undo.service';
 })
 export class TakeOutSheetComponent {
   private readonly sheet = inject(TakeOutSheetService);
+  private readonly store = inject(InventoryStore);
   private readonly undo = inject(TakeOutUndoService);
   private readonly item = this.sheet.item()!;
 
@@ -50,10 +53,14 @@ export class TakeOutSheetComponent {
   protected readonly amount = inject(NonNullableFormBuilder).control('');
 
   private readonly text = toSignal(this.amount.valueChanges, { initialValue: '' });
+  /** What is in the freezer now: the store's quantity, which a refresh can change while the sheet is open. */
+  private readonly available = computed(
+    () => this.store.items().find((i) => i.id === this.item.id)?.quantity ?? this.item.quantity,
+  );
   /** The amount when it is above 0 and at most what is in the freezer; null otherwise. */
   protected readonly parsed = computed(() => {
     const n = parseDecimal(this.text());
-    return n !== null && n > 0 && n <= this.item.quantity ? n : null;
+    return n !== null && isPositiveNumber(n) && n <= this.available() ? n : null;
   });
 
   protected submit(): void {

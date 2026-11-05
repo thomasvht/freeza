@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  linkedSignal,
+  output,
+} from '@angular/core';
 import { CATEGORIES } from '@shared/categories';
 import { LucideMinus } from '@lucide/angular';
 import { formatDate, formatDaysLeft, formatQuantity } from '../../../core/format';
@@ -23,14 +30,15 @@ export class ItemCardComponent {
   });
   protected readonly quantity = computed(() => formatQuantity(this.item()));
   protected readonly bestBefore = computed(() => formatDate(this.item().bestBefore));
-  private lastQuantity: number | null = null;
-  /** True when the quantity differs from the last one shown, so the number ticks over (DESIGN.md §6.6). */
-  protected readonly ticking = computed(() => {
-    const q = this.item().quantity;
-    const changed = this.lastQuantity !== null && this.lastQuantity !== q;
-    this.lastQuantity = q;
-    return changed;
+  private readonly shown = linkedSignal<number, { value: number; changed: boolean }>({
+    source: () => this.item().quantity,
+    computation: (value, previous) => ({
+      value,
+      changed: previous !== undefined && previous.source !== value,
+    }),
   });
+  /** True when the quantity differs from the last one shown, so the number ticks over (DESIGN.md §6.6). */
+  protected readonly ticking = computed(() => this.shown().changed);
   protected readonly daysLeft = computed(() => formatDaysLeft(this.item().daysLeft));
   protected readonly takeLabel = computed(() =>
     fill(S.freezer.takeOne, { name: this.item().name }),

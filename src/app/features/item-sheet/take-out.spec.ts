@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import type { ItemDto } from '@shared/api-types';
 import { InventoryStore, type ItemView } from '../../core/inventory.store';
@@ -50,7 +50,9 @@ const RICE: ItemView = {
 };
 
 describe('take out with undo', () => {
+  const items = signal<ItemDto[]>([]);
   const store = {
+    items,
     takeOut: vi.fn(),
     restoreItem: vi.fn(async () => undefined),
   };
@@ -58,6 +60,7 @@ describe('take out with undo', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    items.set([PEAS, RICE]);
     TestBed.configureTestingModule({ providers: [{ provide: InventoryStore, useValue: store }] });
     toast = TestBed.inject(ToastService);
   });
@@ -142,6 +145,21 @@ describe('take out with undo', () => {
       expect(confirm().disabled).toBe(true);
       type('0,5');
       expect(confirm().disabled).toBe(false);
+    });
+
+    it('uses the current store quantity for the bound and for undo, not the one from open', async () => {
+      store.takeOut.mockResolvedValue({ deleted: true, item: RICE });
+      await open(RICE);
+      items.set([{ ...RICE, quantity: 0.5 }]); // a refresh while the sheet is open
+      fixture.detectChanges();
+      type('1');
+      expect(confirm().disabled).toBe(true);
+      type('0,5');
+      expect(confirm().disabled).toBe(false);
+      confirm().click();
+      await fixture.whenStable();
+      toast.current()!.action!();
+      expect(store.restoreItem).toHaveBeenCalledWith(expect.objectContaining({ id: 'rice' }), 0.5);
     });
 
     it('closes on Cancel and on Escape', async () => {

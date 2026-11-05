@@ -24,14 +24,7 @@ const FOCUSABLE =
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="backdrop" (click)="closed.emit()"></div>
-    <div
-      #panel
-      class="panel"
-      role="dialog"
-      aria-modal="true"
-      [attr.aria-label]="label()"
-      (keydown)="onKeydown($event)"
-    >
+    <div #panel class="panel" role="dialog" aria-modal="true" [attr.aria-label]="label()">
       <div class="body"><ng-content /></div>
       <div class="footer"><ng-content select="[footer]" /></div>
     </div>
@@ -46,7 +39,18 @@ export class Sheet implements OnDestroy {
   private readonly document = inject(DOCUMENT);
   private readonly opener = this.document.activeElement as HTMLElement | null;
 
+  private readonly onKeydown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      this.closed.emit();
+    } else if (event.key === 'Tab') {
+      this.trapTab(event);
+    }
+  };
+
   constructor() {
+    // At document level, so Escape and Tab still work when focus has landed outside the panel.
+    this.document.addEventListener('keydown', this.onKeydown);
     afterNextRender(() => {
       const panel = this.panel().nativeElement;
       (
@@ -57,25 +61,21 @@ export class Sheet implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.document.removeEventListener('keydown', this.onKeydown);
     if (this.opener?.isConnected) this.opener.focus();
   }
 
-  protected onKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Escape') {
-      event.stopPropagation();
-      this.closed.emit();
-    } else if (event.key === 'Tab') {
-      this.trapTab(event);
-    }
-  }
-
   private trapTab(event: KeyboardEvent): void {
-    const items = [...this.panel().nativeElement.querySelectorAll<HTMLElement>(FOCUSABLE)];
+    const panel = this.panel().nativeElement;
+    const items = [...panel.querySelectorAll<HTMLElement>(FOCUSABLE)];
     if (items.length === 0) return;
     const first = items[0];
     const last = items[items.length - 1];
     const active = this.document.activeElement;
-    if (event.shiftKey && active === first) {
+    if (!active || !panel.contains(active)) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus();
+    } else if (event.shiftKey && active === first) {
       event.preventDefault();
       last.focus();
     } else if (!event.shiftKey && active === last) {

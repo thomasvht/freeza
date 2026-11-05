@@ -12,7 +12,9 @@ export class TakeOutUndoService {
 
   /** Takes 1 (counted) or `amount` (measured) out. Never rejects: the store has already toasted a failure. */
   async takeOut(item: ItemDto, amount?: number): Promise<void> {
-    const before = item.quantity;
+    // The caller's item can be stale (a refresh may have changed the quantity); the store is current.
+    const current = this.store.items().find((i) => i.id === item.id) ?? item;
+    const before = current.quantity;
     const result = await (
       amount === undefined ? this.store.takeOut(item.id) : this.store.takeOut(item.id, amount)
     ).catch(() => null);
@@ -20,7 +22,7 @@ export class TakeOutUndoService {
     this.toast.show({
       message: fill(S.undo.tookLast, { name: item.name }),
       actionLabel: S.undo.undo,
-      action: () => void this.store.restoreItem(item, before).catch(() => undefined),
+      action: () => void this.store.restoreItem(current, before).catch(() => undefined),
     });
   }
 }

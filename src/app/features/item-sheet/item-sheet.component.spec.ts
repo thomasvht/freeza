@@ -324,6 +324,20 @@ describe('ItemSheetComponent', () => {
     expect(service.isOpen()).toBe(false);
   });
 
+  it('keeps Tab inside the panel and still closes on Escape when focus is on the body', async () => {
+    await open();
+    (document.activeElement as HTMLElement).blur();
+    expect(document.activeElement).toBe(document.body);
+    const tab = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    document.body.dispatchEvent(tab);
+    expect(tab.defaultPrevented).toBe(true);
+    expect(q('[role="dialog"]').contains(document.activeElement)).toBe(true);
+    (document.activeElement as HTMLElement).blur();
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    expect(service.isOpen()).toBe(false);
+  });
+
   it('moves focus into the sheet and back to the opener on close', async () => {
     const opener = q<HTMLButtonElement>('#opener');
     opener.focus();

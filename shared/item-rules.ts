@@ -7,6 +7,11 @@ import type { PackUnit, Unit } from './units';
 export const ITEM_NAME_MAX = 60;
 export const ITEM_NOTES_MAX = 200;
 
+/** Quantities and pack sizes: finite and above 0. */
+export function isPositiveNumber(n: number): boolean {
+  return Number.isFinite(n) && n > 0;
+}
+
 export const ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 /** `YYYY-MM-DD` that is also a real calendar date. */

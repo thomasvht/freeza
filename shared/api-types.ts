@@ -7,6 +7,7 @@ import {
   checkItemRules,
   ISO_DATE_RE,
   isIsoDate,
+  isPositiveNumber,
   ITEM_NAME_MAX,
   ITEM_NOTES_MAX,
 } from './item-rules';
@@ -33,8 +34,8 @@ const NotesSchema = z
 const CategorySchema = z.enum(CATEGORY_KEYS as [CategoryKey, ...CategoryKey[]]);
 const UnitSchema = z.enum(UNITS as [Unit, ...Unit[]]);
 const PackUnitSchema = z.enum(PACK_UNITS as [PackUnit, ...PackUnit[]]);
-const QuantitySchema = z.number().positive().finite();
-const PackSizeSchema = z.number().positive().finite();
+const QuantitySchema = z.number().refine(isPositiveNumber, 'Must be a positive number');
+const PackSizeSchema = z.number().refine(isPositiveNumber, 'Must be a positive number');
 const ExpiryStatusSchema = z.enum(['expired', 'use-soon', 'fresh']);
 
 // ---------- cross-field item rules ----------
