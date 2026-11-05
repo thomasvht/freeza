@@ -6,6 +6,7 @@ import { drawerRoutes } from './routes/drawers';
 import { inventoryRoutes } from './routes/inventory';
 import { itemRoutes } from './routes/items';
 import { meRoutes } from './routes/me';
+import { recipeRoutes } from './routes/recipes';
 
 export const app = new Hono<AppEnv>();
 
@@ -17,6 +18,7 @@ app.route('/api/inventory', inventoryRoutes);
 app.route('/api/items', itemRoutes);
 app.route('/api/drawers', drawerRoutes);
 app.route('/api/me', meRoutes);
+app.route('/api/recipes', recipeRoutes);
 
 app.all('/api/*', (c) => apiError(c, 404, 'not_found', 'Not found'));
 
