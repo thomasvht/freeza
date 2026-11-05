@@ -1,0 +1,65 @@
+<header class="top">
+  <h1 class="brand t-title">
+    <lucide-icon [img]="icons.snowflake" [size]="26" [strokeWidth]="2" aria-hidden="true" />
+    {{ appName }}
+  </h1>
+  <button type="button" class="icon theme" [attr.aria-label]="themeLabel()" (click)="theme.cycle()">
+    <lucide-icon [img]="themeIcon()" [size]="22" [strokeWidth]="2" aria-hidden="true" />
+  </button>
+  <a class="icon settings" routerLink="/settings" [attr.aria-label]="settingsLabel">
+    <lucide-icon [img]="icons.settings" [size]="22" [strokeWidth]="2" aria-hidden="true" />
+  </a>
+</header>
+
+<label class="search">
+  <lucide-icon [img]="icons.search" [size]="20" [strokeWidth]="2" aria-hidden="true" />
+  <span class="visually-hidden">{{ s.search }}</span>
+  <input
+    type="search"
+    [placeholder]="s.searchPlaceholder"
+    [value]="store.search()"
+    (input)="onSearch($event)"
+  />
+</label>
+
+<app-category-chips [selected]="store.category()" (select)="selectCategory($event)" />
+
+<app-use-first-strip [items]="store.useFirst()" (open)="open($event)" />
+
+@if (store.loaded()) {
+  @if (store.items().length === 0) {
+    <app-empty-state [message]="s.empty" />
+  } @else {
+    <div class="grouping" role="group" [attr.aria-label]="s.grouping">
+      @for (g of groupings; track g.key) {
+        <button
+          type="button"
+          [attr.data-grouping]="g.key"
+          [attr.aria-pressed]="store.grouping() === g.key"
+          (click)="store.grouping.set(g.key)"
+        >
+          {{ g.label }}
+        </button>
+      }
+    </div>
+
+    @if (store.filteredItems().length === 0) {
+      <app-empty-state [message]="emptyMessage()" />
+    } @else if (store.grouping() === 'drawer') {
+      @for (g of visibleGroups(); track g.drawer.id) {
+        <app-drawer-group
+          [drawer]="g.drawer"
+          [items]="g.items"
+          (open)="open($event)"
+          (take)="take($event)"
+        />
+      }
+    } @else {
+      <div class="list">
+        @for (item of store.filteredItems(); track item.id) {
+          <app-item-card [item]="item" (open)="open($event)" (take)="take($event)" />
+        }
+      </div>
+    }
+  }
+}

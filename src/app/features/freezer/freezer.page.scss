@@ -1,0 +1,94 @@
+@use '../../../styles/glass' as *;
+
+// Centred column (max 560 px) and safe-area padding come from the app shell's <main>.
+:host {
+  display: grid;
+  gap: 16px;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.brand {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+
+  lucide-icon {
+    color: var(--accent);
+  }
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  color: var(--ink);
+}
+
+.search {
+  @include glass('strong');
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 14px;
+  color: var(--muted);
+
+  input {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    border: 0;
+    outline: 0;
+    background: none;
+    color: var(--ink);
+
+    &::placeholder {
+      color: var(--muted);
+    }
+  }
+
+  &:focus-within {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.grouping {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--glass);
+
+  button {
+    flex: 1;
+    min-height: 44px;
+    border-radius: 12px;
+    color: var(--muted);
+    font-weight: 700;
+
+    &[aria-pressed='true'] {
+      background: var(--glass-strong);
+      color: var(--accent-ink);
+    }
+  }
+}
+
+.list {
+  display: grid;
+  gap: 8px;
+}
+
+app-drawer-group + app-drawer-group {
+  margin-top: 8px;
+}

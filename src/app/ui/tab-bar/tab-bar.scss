@@ -50,18 +50,3 @@
   color: var(--on-accent);
   box-shadow: var(--shadow);
 }
-
-svg {
-  width: 24px;
-  height: 24px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.add svg {
-  width: 28px;
-  height: 28px;
-}

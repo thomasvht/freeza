@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { LucideAngularModule, X } from 'lucide-angular';
 import { ToastService } from '../../core/toast.service';
 import { S } from '../../strings';
 
 @Component({
   selector: 'app-toast-host',
+  imports: [LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="region" aria-live="polite">
@@ -16,7 +18,7 @@ import { S } from '../../strings';
             </button>
           }
           <button type="button" class="close" [attr.aria-label]="s.dismiss" (click)="toasts.dismiss()">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            <lucide-icon [img]="closeIcon" [size]="20" [strokeWidth]="2" aria-hidden="true" />
           </button>
         </div>
       }
@@ -27,6 +29,7 @@ import { S } from '../../strings';
 export class ToastHost {
   protected readonly toasts = inject(ToastService);
   protected readonly s = S.toast;
+  protected readonly closeIcon = X;
 
   protected run(action: () => void): void {
     this.toasts.dismiss();

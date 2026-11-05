@@ -1,0 +1,77 @@
+@use '../../../../styles/glass' as *;
+
+:host {
+  display: block;
+}
+
+.card {
+  @include glass;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 0;
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.bar {
+  align-self: stretch;
+  flex: none;
+  width: 5px;
+  border-radius: 0 3px 3px 0;
+  background: var(--bar);
+}
+
+.main {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  gap: 2px 8px;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  text-align: left;
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  grid-column: 1;
+}
+
+.chip {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fresh);
+  background: color-mix(in srgb, var(--fresh) 14%, transparent);
+
+  &.use-soon {
+    color: var(--soon);
+    background: color-mix(in srgb, var(--soon) 14%, transparent);
+  }
+
+  &.expired {
+    color: var(--expired);
+    background: color-mix(in srgb, var(--expired) 14%, transparent);
+  }
+}
+
+.take {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}

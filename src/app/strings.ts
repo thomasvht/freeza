@@ -20,6 +20,19 @@ export const S = {
   freezer: {
     empty: 'Your freezer is empty – tap + to add the first item.',
     noMatches: "Nothing matches '{q}'.",
+    noCategory: 'Nothing in this category.',
+    search: 'Search',
+    searchPlaceholder: 'Search your freezer',
+    categories: 'Categories',
+    all: 'All',
+    useFirst: 'Use first',
+    grouping: 'Group items',
+    byDrawer: 'By drawer',
+    byDate: 'By date',
+    takeOne: 'Take one {name} out',
+    theme: 'Theme: {mode}. Tap to change.',
+    settings: 'Settings',
+    themeModes: { system: 'System', light: 'Light', dark: 'Dark' },
   },
 
   recipes: {
