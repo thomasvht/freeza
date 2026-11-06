@@ -1,0 +1,122 @@
+<h1 class="t-title">{{ title }}</h1>
+
+<section class="card" aria-labelledby="h-theme">
+  <h2 id="h-theme" class="t-label">{{ s.theme }}</h2>
+  <div class="segments" role="radiogroup" [attr.aria-labelledby]="'h-theme'">
+    @for (t of themes; track t.mode) {
+      <label class="segment">
+        <input
+          type="radio"
+          name="theme"
+          [value]="t.mode"
+          [checked]="theme.mode() === t.mode"
+          (change)="theme.setMode(t.mode)"
+        />
+        <span>{{ t.label }}</span>
+      </label>
+    }
+  </div>
+</section>
+
+<section class="card" aria-labelledby="h-name">
+  <h2 id="h-name" class="t-label">{{ s.displayName }}</h2>
+  <form class="row" (submit)="$event.preventDefault(); saveName()">
+    <input
+      class="display-name"
+      type="text"
+      autocomplete="off"
+      [attr.aria-labelledby]="'h-name'"
+      [attr.maxlength]="displayNameMax"
+      [value]="name()"
+      (input)="name.set($any($event.target).value)"
+    />
+    <button type="submit" class="primary save-name" [disabled]="!canSaveName()">{{ s.save }}</button>
+  </form>
+</section>
+
+<section class="card" aria-labelledby="h-drawers">
+  <h2 id="h-drawers" class="t-label">{{ s.drawers }}</h2>
+  <ul class="drawers" role="list">
+    @for (drawer of sorted(); track drawer.id; let i = $index; let first = $first; let last = $last) {
+      <li class="row">
+        <input
+          class="drawer-name"
+          type="text"
+          autocomplete="off"
+          [attr.aria-label]="s.drawerName"
+          [attr.maxlength]="drawerNameMax"
+          [disabled]="!online() || pending(drawer)"
+          [value]="drawer.name"
+          (change)="rename(drawer, $any($event.target))"
+        />
+        <button
+          type="button"
+          class="icon"
+          [attr.aria-label]="label(s.moveUp, drawer)"
+          [disabled]="!online() || first || pending(drawer)"
+          (click)="move(i, -1)"
+        >
+          <svg lucideArrowUp [size]="20" [strokeWidth]="2" aria-hidden="true"></svg>
+        </button>
+        <button
+          type="button"
+          class="icon"
+          [attr.aria-label]="label(s.moveDown, drawer)"
+          [disabled]="!online() || last || pending(drawer)"
+          (click)="move(i, 1)"
+        >
+          <svg lucideArrowDown [size]="20" [strokeWidth]="2" aria-hidden="true"></svg>
+        </button>
+        <button
+          type="button"
+          class="icon danger"
+          [attr.aria-label]="label(s.remove, drawer)"
+          [disabled]="!online() || onlyOne() || pending(drawer)"
+          (click)="remove(drawer)"
+        >
+          <svg lucideTrash2 [size]="20" [strokeWidth]="2" aria-hidden="true"></svg>
+        </button>
+      </li>
+    }
+  </ul>
+  <form class="row" (submit)="$event.preventDefault(); add()">
+    <input
+      class="new-drawer"
+      type="text"
+      autocomplete="off"
+      [attr.aria-label]="s.newDrawer"
+      [placeholder]="s.newDrawer"
+      [attr.maxlength]="drawerNameMax"
+      [value]="newDrawer()"
+      (input)="newDrawer.set($any($event.target).value)"
+    />
+    <button type="submit" class="primary add-drawer" [disabled]="!canAdd()">{{ s.add }}</button>
+  </form>
+</section>
+
+<section class="card" aria-labelledby="h-about">
+  <h2 id="h-about" class="t-label">{{ s.about }}</h2>
+  <p>{{ versionLabel }}</p>
+</section>
+
+@if (removing()) {
+  <app-sheet [label]="removeTitle()" (closed)="removing.set(null)">
+    <h2 class="t-title">{{ removeTitle() }}</h2>
+    <label class="field">
+      <span class="t-label">{{ s.removeMove }}</span>
+      <select class="move-to" [value]="target()" (change)="target.set($any($event.target).value)">
+        @for (d of targets(); track d.id) {
+          <option [value]="d.id">{{ d.name }}</option>
+        }
+      </select>
+    </label>
+    <ng-container footer>
+      <button type="button" class="cancel cancel-remove" (click)="removing.set(null)">
+        {{ s.cancel }}
+      </button>
+      <button type="button" class="primary confirm-remove" [disabled]="!online()" (click)="confirmRemove()">
+        {{ s.removeConfirm }}
+      </button>
+    </ng-container>
+  </app-sheet>
+}

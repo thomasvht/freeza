@@ -1,59 +1,154 @@
 # Freeza
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.1.
+Freeza is a freezer inventory app for two people. It's a phone-first PWA: add what goes into the freezer, see what to use first, take items out with one tap (with undo), and ask for three recipe ideas based on what's in there.
 
-## Development server
+It runs entirely on Cloudflare:
 
-To start a local development server, run:
+- One Worker serves the Angular 21 build and a Hono API under `/api`.
+- D1 stores the data.
+- Cloudflare Access (one-time PIN) controls who gets in.
+- Workers AI suggests recipes (20 requests a day).
 
-```bash
-ng serve
+The technical design is in [ARCHITECTURE.md](ARCHITECTURE.md), the product and visual design in [DESIGN.md](DESIGN.md).
+
+## Local development
+
+1. Install dependencies: `npm ci`
+2. Copy the example variables and adjust them if you like:
+
+   ```sh
+   cp .dev.vars.example .dev.vars
+   ```
+
+   `.dev.vars` is git-ignored. `ENVIRONMENT=local` switches off Access verification and uses `DEV_USER_EMAIL` as the signed-in user. Never use real addresses in files you commit.
+3. Create the local database: `npm run db:migrate:local`
+4. Start everything: `npm run dev`. The API runs on <http://localhost:8787> and the app on <http://localhost:4200> (which proxies `/api`).
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | `wrangler dev` and `ng serve` together |
+| `npm run db:migrate:local` | Applies migrations to the local D1 database |
+| `npm test` | Angular unit tests and Worker tests |
+| `npm run build` | Production build of the app |
+| `npm run e2e` | Playwright smoke tests (see below) |
+| `npm run deploy` | Remote migrations, then `wrangler deploy` |
+
+Workers AI has no local emulation. In `wrangler dev` the recipe feature calls the real service and uses the daily allowance.
+
+### End-to-end tests
+
+`npm run e2e` builds the app, starts `wrangler dev` on port 8787 against a fresh local database (`.wrangler/e2e`, wiped on every run), and drives it with Playwright in an iPhone 14 profile on Chromium. The tests never call the recipe feature. Stop `npm run dev` first: the e2e server needs port 8787 and never reuses a running server.
+
+The first time, or after upgrading `@playwright/test`, install the matching browser:
+
+```sh
+npx playwright install chromium
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+E2E tests don't run in CI: they need a browser and wrangler, and CI should stay fast.
 
-## Code scaffolding
+## One-time Cloudflare setup
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+Prerequisite: the `ki-tho.be` zone is already on Cloudflare. The app lives at `freeza.ki-tho.be`.
 
-```bash
-ng generate component component-name
+You need `wrangler` logged in (`npx wrangler login`) for steps 1 and 2.
+
+### 1. Create the D1 database
+
+```sh
+npx wrangler d1 create freeza-db
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Copy the `database_id` from the output and replace the placeholder (`00000000-0000-0000-0000-000000000000`) in `wrangler.jsonc` under `d1_databases`. The id isn't a secret, so you can commit it.
 
-```bash
-ng generate --help
+### 2. Create the Zero Trust organisation
+
+In the Cloudflare dashboard, open **Zero Trust**. If you haven't used it before, it asks you to create an organisation. Pick a team name (for example `freeza`) and choose the free plan. Your team domain is then `<team-name>.cloudflareaccess.com`.
+
+### 3. Enable one-time PIN
+
+In Zero Trust go to **Settings > Authentication > Login methods**. Add **One-time PIN**. People then receive a code by email each time they sign in.
+
+### 4. Create the Access application
+
+1. Go to **Access > Applications > Add an application** and choose **Self-hosted**.
+2. Application name: `Freeza`. Session duration: **1 month**, so phones rarely ask for a new code.
+3. Public hostname: `freeza.ki-tho.be`.
+4. Add a policy with action **Allow**. Under **Include**, choose **Emails** and add the two addresses that may use the app (`you@example.com` and `partner@example.com` are placeholders; use the real ones in the dashboard only).
+5. Under login methods, allow One-time PIN only.
+6. Save the application.
+
+The Worker has `workers_dev` and preview URLs switched off, so `freeza.ki-tho.be` is the only way in.
+
+### 5. Copy the team domain and AUD tag into `wrangler.jsonc`
+
+- Team domain: `<team-name>.cloudflareaccess.com` (from step 2).
+- AUD tag: open the Access application and copy the **Application Audience (AUD) Tag** from its overview.
+
+Put both in `vars`:
+
+```jsonc
+"vars": {
+  "ENVIRONMENT": "production",
+  "ACCESS_TEAM_DOMAIN": "<team-name>.cloudflareaccess.com",
+  "ACCESS_AUD": "<aud-tag>"
+}
 ```
 
-## Building
+Neither value is secret. Commit them.
 
-To build the project run:
+### 6. Set `ALLOWED_EMAILS` in the dashboard
 
-```bash
-ng build
+The Worker double-checks the signed-in email against `ALLOWED_EMAILS`, a comma-separated list. It's personal data, so it stays out of the repo.
+
+`wrangler.jsonc` sets `"keep_vars": true`, so `wrangler deploy` keeps variables you set in the dashboard instead of deleting them. The Worker has to exist before you can set a variable, so do this after the first deploy (step 8):
+
+1. In the dashboard open **Workers & Pages > freeza > Settings > Variables and Secrets**.
+2. Add a plain-text variable `ALLOWED_EMAILS` with the two addresses separated by a comma, with no spaces.
+
+Until it's set, the Worker refuses every request with `403`.
+
+### 7. Create an API token and add the GitHub secrets
+
+1. In the dashboard open **My Profile > API Tokens > Create Token** and use the **Edit Cloudflare Workers** template.
+2. Scope it to your account and to the `ki-tho.be` zone only, then add one permission: **Account > D1 > Edit**.
+
+   If the first deploy reports a missing permission, add exactly that one and redeploy.
+3. Create the token and copy it. You only see it once.
+4. In GitHub open the repository's **Settings > Secrets and variables > Actions** and add:
+   - `CLOUDFLARE_API_TOKEN`: the token
+   - `CLOUDFLARE_ACCOUNT_ID`: your account id (shown on the Workers & Pages overview)
+
+### 8. Deploy
+
+See [Deploying](#deploying). After the first deploy, do step 6, then check the protection:
+
+- Open <https://freeza.ki-tho.be> in a private window. You must see the Cloudflare Access login (email code) before the app.
+- <https://freeza.ki-tho.be/api/health> must not return JSON until you've signed in.
+
+Then sign in with a one-time PIN.
+
+## Deploying
+
+Merge to `main`. The `Deploy` workflow type-checks the Worker, runs the tests, builds, applies D1 migrations to the remote database and deploys. Deploys never run at the same time.
+
+Pull requests run `CI` (type-check, tests, build) and don't deploy. There are no preview deployments: a preview would share the production database.
+
+To deploy by hand (after `npm run build`):
+
+```sh
+npm run deploy
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+That applies the remote migrations (`wrangler d1 migrations apply freeza-db --remote`) and then runs `wrangler deploy`.
 
-## Running unit tests
+## Known gaps
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+- The recipe limit text is unverified. The Worker maps a Workers AI "allowance exceeded" error to `429 ai_limit` by matching the error, and the exact error wording was never observed. Check that the app shows "Recipe ideas are resting for today" the first time a real Workers AI limit is hit.
 
-```bash
-ng test
-```
+## Decommissioning Firebase
 
-## Running end-to-end tests
+The old version of Freeza ran on Firebase. No data is migrated; the new app starts empty. After you've checked that the new app works, do these by hand:
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+1. Delete the `freeza-inventory` project in the Firebase console.
+2. Delete the `FIREBASE_SERVICE_ACCOUNT_FREEZA_INVENTORY` secret in the GitHub repository settings.

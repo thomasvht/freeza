@@ -1,0 +1,3 @@
+ENVIRONMENT=local
+DEV_USER_EMAIL=owner@example.com
+ALLOWED_EMAILS=owner@example.com,partner@example.com

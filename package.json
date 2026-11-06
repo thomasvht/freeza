@@ -1,12 +1,17 @@
 {
   "name": "freeza",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "dev": "concurrently \"wrangler dev\" \"ng serve\"",
+    "db:migrate:local": "wrangler d1 migrations apply freeza-db --local",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test --watch=false && vitest run -c vitest.worker.config.mts",
+    "test:worker": "vitest run -c vitest.worker.config.mts",
+    "e2e": "playwright test",
+    "deploy": "wrangler d1 migrations apply freeza-db --remote && wrangler deploy"
   },
   "prettier": {
     "printWidth": 100,
@@ -26,20 +31,28 @@
     "@angular/common": "^21.1.0",
     "@angular/compiler": "^21.1.0",
     "@angular/core": "^21.1.0",
-    "@angular/fire": "^20.0.1",
     "@angular/forms": "^21.1.0",
     "@angular/platform-browser": "^21.1.0",
     "@angular/router": "^21.1.0",
-    "firebase": "^12.8.0",
+    "@angular/service-worker": "^21.1.1",
+    "@fontsource/manrope": "^5.3.0",
+    "@lucide/angular": "^1.69.0",
+    "hono": "^4.13.16",
+    "jose": "^6.2.15",
     "rxjs": "~7.8.0",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@angular/build": "^21.1.1",
     "@angular/cli": "^21.1.1",
     "@angular/compiler-cli": "^21.1.0",
+    "@cloudflare/vitest-plugin": "^1.6.0",
+    "@playwright/test": "^1.65.0",
+    "concurrently": "^10.0.6",
     "jsdom": "^27.1.0",
     "typescript": "~5.9.2",
-    "vitest": "^4.0.8"
+    "vitest": "^4.1.0",
+    "wrangler": "^4.158.0"
   }
 }

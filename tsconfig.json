@@ -10,10 +10,12 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "isolatedModules": true,
+    "resolveJsonModule": true,
     "experimentalDecorators": true,
     "importHelpers": true,
     "target": "ES2022",
-    "module": "preserve"
+    "module": "preserve",
+    "paths": { "@shared/*": ["./shared/*"] }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
