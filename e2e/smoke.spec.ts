@@ -53,3 +53,11 @@ test('dark theme survives a reload', async ({ page }) => {
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
+
+test('the manifest is requested with credentials (Access) and has a stable id', async ({ page, request }) => {
+  await page.goto('/');
+  const link = page.locator('link[rel="manifest"]');
+  await expect(link).toHaveAttribute('crossorigin', 'use-credentials');
+  const manifest = await (await request.get('/manifest.webmanifest')).json();
+  expect(manifest.id).toBe('/');
+});
