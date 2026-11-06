@@ -237,7 +237,8 @@ step-by-step section):
 **Expired Access session in the PWA:** once the `CF_Authorization` cookie
 expires, Access answers API `fetch` calls with a redirect to its login page.
 `api.client.ts` fetches with `redirect: 'manual'`, so session expiry is detected
-from an `opaqueredirect` (or redirected) response on `/api`. It then shows
+from an `opaqueredirect` (or redirected) response on `/api`, or from a Worker
+`401`. It then shows
 "Session expired – tap to sign in again", which reloads the page so Access can
 run its login flow. Network errors are reported as offline/network, not as an
 expired session. The service worker uses the `freshness` navigation strategy
@@ -296,7 +297,11 @@ reaches Access.
   - every mutation updates the signals optimistically, calls the API, rolls
     back and shows a toast on failure, and refetches after success when the
     server returns derived fields
-  - polling lives here
+  - polling lives here; each poll tick and each return to the foreground also
+    moves "today" on, whether or not the request succeeds
+  - drops an inventory response whose `serverTime` is not newer than the one
+    last applied (a stale service-worker copy, or an out-of-order refresh); the
+    first load is always applied
 - **Forms:** reactive forms (typed `FormGroup`). The best-before suggestion is
   computed from `frozen on` + category until the field is dirty.
 - **Formatting:** `core/format.ts` wraps `Intl.DateTimeFormat('nl-BE')` for
@@ -322,7 +327,7 @@ reaches Access.
   - components only use tokens, never raw colours
   - `glass.scss` provides the glass mixin with the `@supports not
     (backdrop-filter: blur(1px))` fallback
-- **Fonts and icons:** `@fontsource/manrope` (self-hosted) and `lucide-angular`.
+- **Fonts and icons:** `@fontsource/manrope` (self-hosted) and `@lucide/angular`.
 
 ## 8. Configuration
 
@@ -372,7 +377,7 @@ reaches Access.
 |---|---|
 | `npm run dev` | Runs `wrangler dev` (API on :8787 with local D1 and remote AI) and `ng serve` (:4200, proxies `/api` via `proxy.conf.json`) in parallel |
 | `npm run db:migrate:local` | `wrangler d1 migrations apply freeza-db --local` |
-| `npm test` | Angular unit tests (Vitest) + Worker tests (`@cloudflare/vitest-pool-workers`, Miniflare D1) |
+| `npm test` | Angular unit tests (Vitest) + Worker tests (`@cloudflare/vitest-plugin`, Miniflare D1) |
 | `npm run e2e` | Playwright smoke tests against `wrangler dev` with a built app |
 | `npm run build` | `ng build` (production) |
 | `npm run deploy` | Migrations `--remote`, then `wrangler deploy` (normally done by CI) |

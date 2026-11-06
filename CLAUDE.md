@@ -10,9 +10,7 @@ Read the relevant section before changing behaviour, data, or styling. If a
 change contradicts either document, update the document in the same change or
 ask first.
 
-> **Status (05/11/2026):** a redesign is in progress. The repo still contains
-> the old Firebase app until the migration in ARCHITECTURE.md §11 is done. Don't
-> extend the Firebase code. New work follows the target architecture.
+> **Status:** the Cloudflare version is implemented; see [README.md](README.md) for setup.
 
 ## Commands
 
@@ -84,7 +82,7 @@ Run `npm test` and `npm run build` before you say a change is done.
 
 **Testing**
 - New logic in `shared/` or `worker/` comes with tests. Worker tests run in
-  `@cloudflare/vitest-pool-workers` and mock `env.AI`.
+  `@cloudflare/vitest-plugin` and mock `env.AI`.
 - Bug fixes start with a failing test.
 
 **Git**
