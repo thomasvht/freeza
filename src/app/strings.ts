@@ -32,6 +32,8 @@ export const S = {
     takeOne: 'Take one {name} out',
     theme: 'Theme: {mode}. Tap to change.',
     themeModes: { system: 'System', light: 'Light', dark: 'Dark' },
+    loadFailed: "Couldn't load your freezer",
+    retry: 'Retry',
   },
 
   recipes: {
@@ -109,6 +111,7 @@ export const S = {
     notes: 'Notes (optional)',
     save: 'Save',
     delete: 'Delete',
+    addedBy: 'Added by {name} · {date}',
   },
 
   takeOut: {
@@ -116,6 +119,7 @@ export const S = {
     amount: 'Amount ({unit})',
     confirm: 'Take out',
     cancel: 'Cancel',
+    takesRest: 'Only {qty} left – takes the rest',
   },
 
   errors: {

@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import type { DrawerDto, ItemDto, SuggestionDto } from '@shared/api-types';
+import type { DrawerDto, ItemDto, MemberDto, SuggestionDto } from '@shared/api-types';
 import { suggestBestBefore } from '@shared/expiry';
 import { InventoryStore } from '../../core/inventory.store';
 import { ToastService } from '../../core/toast.service';
@@ -45,9 +45,11 @@ const BEEF: ItemDto = {
 describe('ItemSheetComponent', () => {
   const drawers = signal<DrawerDto[]>([]);
   const suggestions = signal<SuggestionDto[]>([]);
+  const members = signal<MemberDto[]>([]);
   const store = {
     drawers,
     suggestions,
+    members,
     today: signal(TODAY),
     createItem: vi.fn(async () => undefined),
     updateItem: vi.fn(async () => undefined),
@@ -65,6 +67,7 @@ describe('ItemSheetComponent', () => {
       { id: 'drawer-2', name: 'Drawer 2', position: 2 },
     ]);
     suggestions.set([]);
+    members.set([]);
     TestBed.configureTestingModule({
       providers: [{ provide: InventoryStore, useValue: store }],
     });
@@ -287,11 +290,57 @@ describe('ItemSheetComponent', () => {
     expect(field('packSize').value).toBe('500');
     type('quantity', '3');
     click('button.save');
-    expect(store.updateItem).toHaveBeenCalledWith(
-      BEEF_ID,
-      expect.objectContaining({ quantity: 3, name: 'Minced beef' }),
-    );
+    expect(store.updateItem).toHaveBeenCalledWith(BEEF_ID, { quantity: 3 });
     expect(store.createItem).not.toHaveBeenCalled();
+  });
+
+  it('sends only the changed fields when editing (never an untouched quantity)', async () => {
+    await open(BEEF);
+    type('notes', 'For Sunday');
+    click('button.save');
+    expect(store.updateItem).toHaveBeenCalledWith(BEEF_ID, { notes: 'For Sunday' });
+  });
+
+  it('closes without a request when nothing changed in edit mode', async () => {
+    await open(BEEF);
+    type('quantity', '2,0');
+    click('button.save');
+    expect(store.updateItem).not.toHaveBeenCalled();
+    expect(service.isOpen()).toBe(false);
+  });
+
+  it('shows who added the item and when, only in edit mode', async () => {
+    members.set([{ email: 'thomas@example.com', displayName: 'Thomas' }]);
+    await open(BEEF);
+    expect(q('.added-by').textContent?.trim()).toBe('Added by Thomas · 01/11/2026');
+    service.close();
+    fixture.detectChanges();
+    await open();
+    expect(el.querySelector('.added-by')).toBeNull();
+  });
+
+  it('defaults to the first drawer once drawers arrive after opening', async () => {
+    drawers.set([]);
+    await open();
+    drawers.set([
+      { id: 'drawer-2', name: 'Drawer 2', position: 2 },
+      { id: 'drawer-1', name: 'Drawer 1', position: 1 },
+    ]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(q('[data-drawer="drawer-1"]').getAttribute('aria-pressed')).toBe('true');
+    type('name', 'Peas');
+    click('button.save');
+    expect(store.createItem).toHaveBeenCalledWith(expect.objectContaining({ drawerId: 'drawer-1' }));
+  });
+
+  it('keeps a picked drawer when the drawers reload', async () => {
+    await open();
+    click('[data-drawer="drawer-2"]');
+    drawers.set([...drawers()]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(q('[data-drawer="drawer-2"]').getAttribute('aria-pressed')).toBe('true');
   });
 
   it('shows Delete only when editing; delete toasts with Undo that restores', async () => {

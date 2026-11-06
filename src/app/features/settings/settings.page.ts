@@ -11,7 +11,7 @@ import { DISPLAY_NAME_MAX, DRAWER_NAME_MAX, MAX_ACTIVE_DRAWERS } from '@shared/i
 import { LucideArrowDown, LucideArrowUp, LucideTrash2 } from '@lucide/angular';
 import { version } from '../../../../package.json';
 import { ConnectivityService } from '../../core/connectivity.service';
-import { InventoryStore } from '../../core/inventory.store';
+import { InventoryStore, isPendingDrawer } from '../../core/inventory.store';
 import { ThemeService, type ThemeMode } from '../../core/theme.service';
 import { fill, S } from '../../strings';
 import { Sheet } from '../../ui/sheet/sheet';
@@ -63,6 +63,11 @@ export class SettingsPage {
     fill(S.settings.removeTitle, { name: this.removing()?.name ?? '' }),
   );
 
+  /** Optimistic row the server has not confirmed: it has no real id to rename, move or remove yet. */
+  protected pending(drawer: DrawerDto): boolean {
+    return isPendingDrawer(drawer.id);
+  }
+
   protected label(template: string, drawer: DrawerDto): string {
     return fill(template, { name: drawer.name });
   }
@@ -75,7 +80,7 @@ export class SettingsPage {
   }
 
   protected rename(drawer: DrawerDto, input: HTMLInputElement): void {
-    if (!this.online()) return;
+    if (!this.online() || this.pending(drawer)) return;
     const name = input.value.trim();
     if (name === '' || name === drawer.name) {
       input.value = drawer.name;
@@ -87,7 +92,7 @@ export class SettingsPage {
   }
 
   protected move(index: number, by: -1 | 1): void {
-    if (!this.online()) return;
+    if (!this.online() || this.pending(this.sorted()[index])) return;
     const ids = this.sorted().map((d) => d.id);
     const swap = index + by;
     if (swap < 0 || swap >= ids.length) return;
@@ -103,7 +108,7 @@ export class SettingsPage {
   }
 
   protected remove(drawer: DrawerDto): void {
-    if (!this.online() || this.onlyOne()) return;
+    if (!this.online() || this.onlyOne() || this.pending(drawer)) return;
     if (this.store.items().some((i) => i.drawerId === drawer.id)) this.removing.set(drawer);
     else this.run(this.store.deleteDrawer(drawer.id));
   }

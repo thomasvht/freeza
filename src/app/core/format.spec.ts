@@ -5,6 +5,7 @@ import {
   formatNumber,
   formatQuantity,
   formatShortDate,
+  formatTimestampDate,
 } from './format';
 
 function item(over: Partial<ItemDto>): ItemDto {
@@ -35,9 +36,15 @@ describe('format', () => {
     expect(formatShortDate('2026-11-05')).toBe('05/11');
   });
 
-  it('formats numbers with a decimal comma and at most 2 decimals', () => {
+  it('formats a timestamp as its local calendar date', () => {
+    const local = new Date(2026, 10, 3, 23, 30); // 03/11/2026 23:30 in the local zone
+    expect(formatTimestampDate(local.toISOString())).toBe('03/11/2026');
+  });
+
+  it('formats numbers with a decimal comma and at most 3 decimals', () => {
     expect(formatNumber(0.5)).toBe('0,5');
-    expect(formatNumber(1.234)).toBe('1,23');
+    expect(formatNumber(0.125)).toBe('0,125');
+    expect(formatNumber(1.2345)).toBe('1,235');
   });
 
   it('formats quantities', () => {

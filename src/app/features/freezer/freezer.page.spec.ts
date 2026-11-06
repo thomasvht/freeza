@@ -4,7 +4,7 @@ import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import type { InventoryResponse, ItemDto } from '@shared/api-types';
 import { todayLocal } from '@shared/dates';
-import { ApiClient } from '../../core/api.client';
+import { ApiClient, ApiError } from '../../core/api.client';
 import { InventoryStore } from '../../core/inventory.store';
 import { ThemeService } from '../../core/theme.service';
 import { ITEM_SHEET, TAKE_OUT_SHEET } from '../item-sheet/sheet.tokens';
@@ -107,6 +107,35 @@ describe('FreezerPage', () => {
     )!;
 
   beforeEach(() => vi.clearAllMocks());
+
+  it('shows an error with Retry when the first load fails, and loads on Retry', async () => {
+    const get = vi
+      .fn()
+      .mockRejectedValueOnce(new ApiError(500, 'internal', 'boom'))
+      .mockResolvedValue(inventory(ITEMS));
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([{ path: '', component: FreezerPage }]),
+        { provide: ApiClient, useValue: { get, post: vi.fn() } },
+        { provide: ThemeService, useValue: theme },
+        { provide: ITEM_SHEET, useValue: itemSheet },
+        { provide: TAKE_OUT_SHEET, useValue: takeOutSheet },
+      ],
+    });
+    store = TestBed.inject(InventoryStore);
+    await store.refresh().catch(() => undefined);
+    harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/', FreezerPage);
+    harness.detectChanges();
+    el = harness.routeNativeElement as HTMLElement;
+    expect(el.textContent).toContain("Couldn't load your freezer");
+    click('button.retry');
+    await vi.waitFor(() => expect(store.loaded()).toBe(true));
+    harness.detectChanges();
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(el.querySelector('button.retry')).toBeNull();
+    expect(names()).toContain('Minced beef');
+  });
 
   it('shows the empty-freezer message for an empty store', async () => {
     await setup([]);

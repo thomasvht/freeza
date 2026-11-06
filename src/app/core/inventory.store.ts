@@ -28,6 +28,13 @@ export type Grouping = 'drawer' | 'date';
 
 const POLL_MS = 30_000;
 
+/** Id prefix of a drawer the server has not confirmed yet. */
+export const PENDING_DRAWER_PREFIX = 'pending-';
+
+export function isPendingDrawer(id: string): boolean {
+  return id.startsWith(PENDING_DRAWER_PREFIX);
+}
+
 interface Snapshot {
   drawers: DrawerDto[];
   items: ItemDto[];
@@ -51,6 +58,7 @@ export class InventoryStore {
   private readonly _suggestions = signal<SuggestionDto[]>([]);
   private readonly _loaded = signal(false);
   private readonly _today = signal<IsoDate>(todayLocal());
+  private readonly _loadFailed = signal(false);
 
   readonly drawers = this._drawers.asReadonly();
   readonly items = this._items.asReadonly();
@@ -59,6 +67,8 @@ export class InventoryStore {
   readonly suggestions = this._suggestions.asReadonly();
   readonly loaded = this._loaded.asReadonly();
   readonly today = this._today.asReadonly();
+  /** The first load failed for a reason other than an expired session; the page offers a retry. */
+  readonly loadFailed = this._loadFailed.asReadonly();
 
   readonly search = signal('');
   readonly category = signal<CategoryKey | null>(null);
@@ -106,17 +116,32 @@ export class InventoryStore {
   private pending = 0;
   private mutationSeq = 0;
   private refreshAfterRollback = false;
+  /** `serverTime` of the last applied inventory; older or equal responses are dropped. */
+  private appliedServerTime: string | null = null;
   private pollTimer: ReturnType<typeof setInterval> | undefined;
   private readonly onVisibilityChange = () => {
-    if (this.isVisible()) this.refreshQuietly();
+    if (!this.isVisible()) return;
+    this._today.set(todayLocal());
+    this.refreshQuietly();
   };
   private readonly onOnline = () => this.refreshQuietly();
 
   async refresh(): Promise<void> {
     const seq = this.mutationSeq;
-    const res = await this.api.get<InventoryResponse>('/inventory');
+    let res: InventoryResponse;
+    try {
+      res = await this.api.get<InventoryResponse>('/inventory');
+    } catch (e) {
+      if (!this._loaded()) this._loadFailed.set(!(e instanceof ApiError && e.code === 'session_expired'));
+      throw e;
+    }
     // Drop a response that would overwrite an optimistic change made while it was in flight.
     if (this.pending > 0 || seq !== this.mutationSeq) return;
+    // Drop a response no newer than the applied one: a stale service-worker copy on a slow network, or an
+    // older refresh that resolved after a newer one. The first load is always applied (offline start).
+    if (this.appliedServerTime !== null && res.serverTime <= this.appliedServerTime) return;
+    this.appliedServerTime = res.serverTime;
+    this._loadFailed.set(false);
     this._drawers.set(res.drawers);
     this._items.set(res.items);
     this._members.set(res.members);
@@ -128,10 +153,8 @@ export class InventoryStore {
 
   startPolling(): void {
     if (this.pollTimer !== undefined) return;
-    this.refreshQuietly();
-    this.pollTimer = setInterval(() => {
-      if (this.isVisible()) this.refreshQuietly();
-    }, POLL_MS);
+    this.tick();
+    this.pollTimer = setInterval(() => this.tick(), POLL_MS);
     this.document.addEventListener('visibilitychange', this.onVisibilityChange);
     this.document.defaultView?.addEventListener('online', this.onOnline);
   }
@@ -218,7 +241,7 @@ export class InventoryStore {
   // ---------- drawers ----------
 
   async createDrawer(name: string): Promise<void> {
-    const tempId = `pending-${crypto.randomUUID()}`;
+    const tempId = `${PENDING_DRAWER_PREFIX}${crypto.randomUUID()}`;
     const position = Math.max(0, ...this._drawers().map((d) => d.position)) + 1;
     await this.mutate(
       () => this._drawers.update((drawers) => [...drawers, { id: tempId, name, position }]),
@@ -336,6 +359,12 @@ export class InventoryStore {
         ? items.map((i) => (i.id === saved.id ? saved : i))
         : [...items, saved],
     );
+  }
+
+  /** A poll tick: `today` moves on (e.g. past midnight) whether or not the refresh succeeds. */
+  private tick(): void {
+    this._today.set(todayLocal());
+    if (this.isVisible()) this.refreshQuietly();
   }
 
   private refreshQuietly(): void {

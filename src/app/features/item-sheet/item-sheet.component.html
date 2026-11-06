@@ -135,6 +135,10 @@
     <textarea id="f-notes" name="notes" rows="2" [formControl]="form.controls.notes"></textarea>
   </div>
 
+  @if (addedBy(); as line) {
+    <p class="added-by">{{ line }}</p>
+  }
+
   <ng-container footer>
     @if (editing) {
       <button type="button" class="delete" [disabled]="!online()" (click)="delete()">{{ s.delete }}</button>

@@ -51,9 +51,12 @@ function inventory(withItem: boolean): InventoryResponse {
     members: [],
     me: { email: 'a@b.c', displayName: 'A' },
     suggestions: [],
-    serverTime: '2026-11-05T10:00:00.000Z',
+    // Each response is newer than the last, like a live server (the store drops older ones).
+    serverTime: new Date(Date.UTC(2026, 10, 5, 10) + ++serverClock * 1000).toISOString(),
   };
 }
+
+let serverClock = 0;
 
 describe('RecipesPage', () => {
   const post = vi.fn();

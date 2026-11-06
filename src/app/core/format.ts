@@ -1,5 +1,5 @@
 import type { ItemDto } from '@shared/api-types';
-import type { IsoDate } from '@shared/dates';
+import { todayLocal, type IsoDate } from '@shared/dates';
 import { isCountedUnit, UNIT_LABELS } from '@shared/units';
 import { fill, S } from '../strings';
 
@@ -16,7 +16,7 @@ const shortDateFormat = new Intl.DateTimeFormat(LOCALE, {
   month: '2-digit',
   timeZone: 'UTC',
 });
-const numberFormat = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 2 });
+const numberFormat = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 3 });
 
 /** Days from which `formatDaysLeft` switches to whole months. */
 const MONTHS_FROM_DAYS = 60;
@@ -37,7 +37,12 @@ export function formatShortDate(d: IsoDate): string {
   return shortDateFormat.format(toUtcDate(d));
 }
 
-/** Decimal comma, at most 2 decimals. */
+/** `dd/MM/yyyy` of an ISO-8601 timestamp, in the phone's time zone. */
+export function formatTimestampDate(timestamp: string): string {
+  return formatDate(todayLocal(new Date(timestamp)));
+}
+
+/** Decimal comma, at most 3 decimals (so 0,125 kg shows exactly). */
 export function formatNumber(n: number): string {
   return numberFormat.format(n);
 }

@@ -5,6 +5,7 @@ import { parseDecimal } from '@shared/decimal';
 import { isPositiveNumber } from '@shared/item-rules';
 import { UNIT_LABELS } from '@shared/units';
 import { ConnectivityService } from '../../core/connectivity.service';
+import { formatQuantity } from '../../core/format';
 import { InventoryStore } from '../../core/inventory.store';
 import { fill, S } from '../../strings';
 import { Sheet } from '../../ui/sheet/sheet';
@@ -31,6 +32,9 @@ import { TakeOutUndoService } from './take-out-undo.service';
           [formControl]="amount"
           (keydown.enter)="submit()"
         />
+        @if (rest(); as hint) {
+          <p class="hint" aria-live="polite">{{ hint }}</p>
+        }
       </div>
       <ng-container footer>
         <button type="button" class="cancel" (click)="close()">{{ s.cancel }}</button>
@@ -59,10 +63,16 @@ export class TakeOutSheetComponent {
   private readonly available = computed(
     () => this.store.items().find((i) => i.id === this.item.id)?.quantity ?? this.item.quantity,
   );
-  /** The amount when it is above 0 and at most what is in the freezer; null otherwise. */
+  /** The amount when it is above 0; null otherwise. More than is left is fine: the server clamps it to 0. */
   protected readonly parsed = computed(() => {
     const n = parseDecimal(this.text());
-    return n !== null && isPositiveNumber(n) && n <= this.available() ? n : null;
+    return n !== null && isPositiveNumber(n) ? n : null;
+  });
+  /** "Only 0,8 kg left – takes the rest" when the amount is more than what is left. */
+  protected readonly rest = computed(() => {
+    const n = this.parsed();
+    if (n === null || n <= this.available()) return null;
+    return fill(S.takeOut.takesRest, { qty: formatQuantity({ ...this.item, quantity: this.available() }) });
   });
 
   protected submit(): void {

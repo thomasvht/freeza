@@ -118,6 +118,12 @@ describe('ApiClient', () => {
       expect(TestBed.inject(SessionService).expired()).toBe(false);
     });
 
+    it('maps a Worker 401 to session_expired and flags the session', async () => {
+      fetchFn.mockResolvedValueOnce(json({ error: { code: 'unauthorized', message: 'x' } }, 401));
+      await expect(api.get('/inventory')).rejects.toMatchObject({ status: 401, code: 'session_expired' });
+      expect(TestBed.inject(SessionService).expired()).toBe(true);
+    });
+
     it('flags the session as expired', async () => {
       fetchFn.mockResolvedValueOnce(opaque({ type: 'opaqueredirect' }));
       await api.get('/inventory').catch(() => undefined);

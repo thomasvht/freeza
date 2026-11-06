@@ -67,7 +67,9 @@ export class ApiClient {
       throw new ApiError(0, 'network', e instanceof Error ? e.message : 'Network error');
     }
 
-    if (res.type === 'opaqueredirect' || res.redirected) throw this.sessionExpired('Session expired');
+    if (res.type === 'opaqueredirect' || res.redirected) throw this.sessionExpired(0, 'Session expired');
+    // The Worker answers 401 when the Access token is missing or expired (ARCHITECTURE.md §5).
+    if (res.status === 401) throw this.sessionExpired(401, 'Session expired');
     if (res.status === 504 && (await this.isGatewayFailure(res))) {
       throw new ApiError(504, 'network', 'Network error');
     }
@@ -87,9 +89,9 @@ export class ApiClient {
     }
   }
 
-  private sessionExpired(message: string): ApiError {
+  private sessionExpired(status: number, message: string): ApiError {
     this.session.markExpired();
-    return new ApiError(0, 'session_expired', message);
+    return new ApiError(status, 'session_expired', message);
   }
 }
 

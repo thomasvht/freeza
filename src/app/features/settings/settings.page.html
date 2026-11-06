@@ -45,7 +45,7 @@
           autocomplete="off"
           [attr.aria-label]="s.drawerName"
           [attr.maxlength]="drawerNameMax"
-          [disabled]="!online()"
+          [disabled]="!online() || pending(drawer)"
           [value]="drawer.name"
           (change)="rename(drawer, $any($event.target))"
         />
@@ -53,7 +53,7 @@
           type="button"
           class="icon"
           [attr.aria-label]="label(s.moveUp, drawer)"
-          [disabled]="!online() || first"
+          [disabled]="!online() || first || pending(drawer)"
           (click)="move(i, -1)"
         >
           <svg lucideArrowUp [size]="20" [strokeWidth]="2" aria-hidden="true"></svg>
@@ -62,7 +62,7 @@
           type="button"
           class="icon"
           [attr.aria-label]="label(s.moveDown, drawer)"
-          [disabled]="!online() || last"
+          [disabled]="!online() || last || pending(drawer)"
           (click)="move(i, 1)"
         >
           <svg lucideArrowDown [size]="20" [strokeWidth]="2" aria-hidden="true"></svg>
@@ -71,7 +71,7 @@
           type="button"
           class="icon danger"
           [attr.aria-label]="label(s.remove, drawer)"
-          [disabled]="!online() || onlyOne()"
+          [disabled]="!online() || onlyOne() || pending(drawer)"
           (click)="remove(drawer)"
         >
           <svg lucideTrash2 [size]="20" [strokeWidth]="2" aria-hidden="true"></svg>

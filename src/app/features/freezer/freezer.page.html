@@ -26,7 +26,12 @@
 
 <app-use-first-strip [items]="store.useFirst()" (open)="open($event)" />
 
-@if (store.loaded()) {
+@if (!store.loaded() && store.loadFailed()) {
+  <div class="load-failed" role="alert">
+    <p>{{ s.loadFailed }}</p>
+    <button type="button" class="retry" (click)="retry()">{{ s.retry }}</button>
+  </div>
+} @else if (store.loaded()) {
   @if (store.items().length === 0) {
     <app-empty-state [message]="s.empty" />
   } @else {

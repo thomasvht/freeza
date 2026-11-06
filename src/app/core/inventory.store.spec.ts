@@ -38,6 +38,12 @@ const DRAWERS: DrawerDto[] = [
   { id: 'drawer-2', name: 'Middle', position: 2 },
 ];
 
+/** Each response is a second newer than the last, like a live server. */
+let serverClock = 0;
+function nextServerTime(): string {
+  return new Date(Date.UTC(2026, 10, 5, 10) + ++serverClock * 1000).toISOString();
+}
+
 function inventory(): InventoryResponse {
   return {
     drawers: DRAWERS,
@@ -49,7 +55,7 @@ function inventory(): InventoryResponse {
     members: [{ email: 'thomas@example.com', displayName: 'Thomas' }],
     me: { email: 'thomas@example.com', displayName: 'Thomas' },
     suggestions: [],
-    serverTime: '2026-11-05T10:00:00.000Z',
+    serverTime: nextServerTime(),
   };
 }
 
@@ -189,6 +195,74 @@ describe('InventoryStore', () => {
     await deleting;
     await vi.waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
     await vi.waitFor(() => expect(store.items().some((i) => i.id === 'peas')).toBe(false));
+  });
+
+  it('ignores a response older than the last applied one (a stale service-worker copy)', async () => {
+    const applied = store.items().length;
+    const stale = { ...inventory(), items: [], serverTime: '2026-11-05T09:00:00.000Z' };
+    api.get.mockResolvedValueOnce(stale);
+    await store.refresh();
+    expect(store.items()).toHaveLength(applied);
+  });
+
+  it('ignores a replayed response with the same serverTime', async () => {
+    const first = inventory();
+    api.get.mockResolvedValueOnce(first);
+    await store.refresh();
+    api.get.mockResolvedValueOnce({ ...first, items: [] });
+    await store.refresh();
+    expect(store.items()).toHaveLength(first.items.length);
+  });
+
+  it('keeps the newer of two overlapping refreshes that resolve out of order', async () => {
+    const older = deferred<InventoryResponse>();
+    const newer = deferred<InventoryResponse>();
+    api.get.mockReturnValueOnce(older.promise).mockReturnValueOnce(newer.promise);
+    const a = store.refresh();
+    const b = store.refresh();
+    const olderBody = { ...inventory(), items: [] };
+    const newerBody = inventory();
+    newer.resolve(newerBody);
+    await b;
+    older.resolve(olderBody);
+    await a;
+    expect(store.items()).toHaveLength(newerBody.items.length);
+  });
+
+  it('flags a failed first load (not a session expiry) and clears it on success', async () => {
+    TestBed.resetTestingModule();
+    api = fakeApi();
+    TestBed.configureTestingModule({ providers: [{ provide: ApiClient, useValue: api }] });
+    store = TestBed.inject(InventoryStore);
+    expect(store.loadFailed()).toBe(false);
+    api.get.mockRejectedValueOnce(new ApiError(0, 'session_expired', 'x'));
+    await expect(store.refresh()).rejects.toBeInstanceOf(ApiError);
+    expect(store.loadFailed()).toBe(false);
+    api.get.mockRejectedValueOnce(new ApiError(500, 'internal', 'boom'));
+    await expect(store.refresh()).rejects.toBeInstanceOf(ApiError);
+    expect(store.loadFailed()).toBe(true);
+    await store.refresh();
+    expect(store.loadFailed()).toBe(false);
+    expect(store.loaded()).toBe(true);
+  });
+
+  it('moves today past midnight on a poll tick and on becoming visible, even when the refresh fails', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout', 'Date'] });
+    vi.setSystemTime(new Date(2026, 10, 5, 23, 59, 50));
+    api.get.mockRejectedValue(new ApiError(0, 'network', 'down'));
+    store.startPolling();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(store.today()).toBe('2026-11-05');
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(store.today()).toBe('2026-11-06');
+
+    vi.setSystemTime(new Date(2026, 10, 7, 0, 0, 5)); // the next midnight passes between ticks
+    setVisibility('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(store.today()).toBe('2026-11-06');
+    setVisibility('visible');
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(store.today()).toBe('2026-11-07');
   });
 
   it('polls every 30 s while visible, not while hidden, and on becoming visible', async () => {

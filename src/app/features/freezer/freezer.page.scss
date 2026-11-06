@@ -93,3 +93,22 @@
 app-drawer-group + app-drawer-group {
   margin-top: 8px;
 }
+
+.load-failed {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--muted);
+
+  .retry {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 20px;
+    border-radius: 14px;
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 800;
+  }
+}

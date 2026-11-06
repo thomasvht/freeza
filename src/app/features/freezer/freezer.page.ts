@@ -83,6 +83,11 @@ export class FreezerPage {
     });
   }
 
+  protected retry(): void {
+    // A failure keeps the error state (the store flags it); nothing else to do here.
+    this.store.refresh().catch(() => undefined);
+  }
+
   protected onSearch(event: Event): void {
     this.store.search.set((event.target as HTMLInputElement).value);
   }

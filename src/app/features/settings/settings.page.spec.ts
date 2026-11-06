@@ -56,7 +56,13 @@ describe('SettingsPage', () => {
   async function setup(drawerCount = 3, itemInDrawer1 = false) {
     TestBed.configureTestingModule({
       providers: [
-        { provide: ApiClient, useValue: { get: async () => inventory(drawerCount, itemInDrawer1) } },
+        {
+          provide: ApiClient,
+          useValue: {
+            get: async () => inventory(drawerCount, itemInDrawer1),
+            post: () => new Promise(() => undefined), // never settles: keeps optimistic rows pending
+          },
+        },
         { provide: ThemeService, useValue: theme },
       ],
     });
@@ -209,6 +215,19 @@ describe('SettingsPage', () => {
   it('disables Remove when one drawer is left', async () => {
     await setup(1);
     expect(q<HTMLButtonElement>('button[aria-label="Remove Drawer 1"]').disabled).toBe(true);
+  });
+
+  it('disables rename, move and remove on a drawer that is still being created', async () => {
+    await setup();
+    vi.mocked(store.createDrawer).mockRestore();
+    void store.createDrawer('Door');
+    fixture.detectChanges();
+    const rows = el.querySelectorAll<HTMLLIElement>('.drawers li');
+    const pending = rows[rows.length - 1];
+    expect(pending.querySelector<HTMLInputElement>('input.drawer-name')!.value).toBe('Door');
+    expect(pending.querySelector<HTMLInputElement>('input.drawer-name')!.disabled).toBe(true);
+    pending.querySelectorAll<HTMLButtonElement>('button').forEach((b) => expect(b.disabled).toBe(true));
+    expect(rows[0].querySelector<HTMLInputElement>('input.drawer-name')!.disabled).toBe(false);
   });
 
   it('shows the app version from package.json', async () => {

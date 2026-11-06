@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
-import type { CreateItemBody, SuggestionDto } from '@shared/api-types';
+import type { CreateItemBody, PatchItemBody, SuggestionDto } from '@shared/api-types';
 import { CATEGORIES, type CategoryKey } from '@shared/categories';
 import { parseDecimal } from '@shared/decimal';
 import { suggestBestBefore } from '@shared/expiry';
@@ -21,7 +21,8 @@ import {
   type Unit,
 } from '@shared/units';
 import { ConnectivityService } from '../../core/connectivity.service';
-import { InventoryStore } from '../../core/inventory.store';
+import { formatTimestampDate } from '../../core/format';
+import { InventoryStore, type ItemView } from '../../core/inventory.store';
 import { ToastService } from '../../core/toast.service';
 import { fill, S } from '../../strings';
 import { Sheet } from '../../ui/sheet/sheet';
@@ -65,7 +66,7 @@ export class ItemSheetComponent {
   protected readonly form = inject(NonNullableFormBuilder).group({
     name: this.item?.name ?? '',
     category: (this.item?.category ?? 'meat') as CategoryKey,
-    drawerId: this.item?.drawerId ?? this.store.drawers()[0]?.id ?? '',
+    drawerId: this.item?.drawerId ?? this.drawers()[0]?.id ?? '',
     quantity: this.item ? toText(this.item.quantity) : '1',
     unit: (this.item?.unit ?? 'piece') as Unit,
     packSize: this.item?.packSize != null ? toText(this.item.packSize) : '',
@@ -73,6 +74,17 @@ export class ItemSheetComponent {
     frozenOn: this.item?.frozenOn ?? this.store.today(),
     bestBefore: this.item?.bestBefore ?? '',
     notes: this.item?.notes ?? '',
+  });
+
+  /** "Added by Thomas · 03/11/2026" in edit mode (DESIGN.md §4.7); null when adding. */
+  protected readonly addedBy = computed(() => {
+    const item = this.item;
+    if (!item) return null;
+    const name =
+      this.store.members().find((m) => m.email === item.createdBy)?.displayName ??
+      (item as Partial<ItemView>).addedByName ??
+      item.createdBy.split('@')[0];
+    return fill(S.sheet.addedBy, { name, date: formatTimestampDate(item.createdAt) });
   });
 
   /** True once the user typed a best-before date; the category then stops overwriting it. */
@@ -143,6 +155,11 @@ export class ItemSheetComponent {
   constructor() {
     const { category, frozenOn, unit, packSize } = this.form.controls;
     if (!this.item) this.suggestBestBefore();
+    // Opened before the drawers loaded: default to the first drawer once they arrive.
+    effect(() => {
+      const first = this.drawers()[0];
+      if (first && this.form.controls.drawerId.value === '') this.form.controls.drawerId.setValue(first.id);
+    });
     category.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.suggestBestBefore());
     frozenOn.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.suggestBestBefore());
     unit.valueChanges.pipe(takeUntilDestroyed()).subscribe((u) => {
@@ -195,9 +212,16 @@ export class ItemSheetComponent {
   protected save(): void {
     const body = this.parsed();
     if (body === null || !this.online()) return;
-    const { id, ...patch } = body;
     this.sheet.close();
-    const done = this.item ? this.store.updateItem(id, patch) : this.store.createItem(body);
+    let done: Promise<void>;
+    if (this.item) {
+      // Only the fields the user changed: resending the rest would undo the other phone's edits and take-outs.
+      const patch = changedFields(this.item, body);
+      if (Object.keys(patch).length === 0) return;
+      done = this.store.updateItem(this.item.id, patch);
+    } else {
+      done = this.store.createItem(body);
+    }
     // The store has already toasted and rolled back on failure.
     done.catch(() => undefined);
   }
@@ -227,4 +251,13 @@ export class ItemSheetComponent {
     if (this.manual() || !isIsoDate(frozenOn.value)) return;
     bestBefore.setValue(suggestBestBefore(frozenOn.value, category.value));
   }
+}
+
+/** The fields of `body` whose value differs from the item as it was opened. */
+function changedFields(item: CreateItemBody, body: CreateItemBody): PatchItemBody {
+  const patch: Record<string, unknown> = {};
+  for (const key of Object.keys(body) as (keyof CreateItemBody)[]) {
+    if (key !== 'id' && body[key] !== item[key]) patch[key] = body[key];
+  }
+  return patch as PatchItemBody;
 }

@@ -134,26 +134,41 @@ describe('take out with undo', () => {
       expect(store.restoreItem).toHaveBeenCalledWith(RICE, 1.5);
     });
 
-    it('disables Take out for empty, zero, invalid or too-large amounts', async () => {
+    it('disables Take out for empty, zero or invalid amounts', async () => {
       await open(RICE);
       expect(confirm().disabled).toBe(true);
       type('0');
       expect(confirm().disabled).toBe(true);
       type('abc');
       expect(confirm().disabled).toBe(true);
-      type('1,6');
-      expect(confirm().disabled).toBe(true);
       type('0,5');
       expect(confirm().disabled).toBe(false);
     });
 
-    it('uses the current store quantity for the bound and for undo, not the one from open', async () => {
+    it('takes more than is left (the server clamps it to 0) with a hint and Undo', async () => {
+      const left = { ...RICE, quantity: 0.8 };
+      items.set([left]);
+      store.takeOut.mockResolvedValue({ deleted: true, item: left });
+      await open(left);
+      type('0,8');
+      expect(el.querySelector('.hint')).toBeNull();
+      type('1');
+      expect(el.querySelector('.hint')?.textContent?.trim()).toBe('Only 0,8 kg left – takes the rest');
+      expect(confirm().disabled).toBe(false);
+      confirm().click();
+      expect(store.takeOut).toHaveBeenCalledWith('rice', 1);
+      await fixture.whenStable();
+      toast.current()!.action!();
+      expect(store.restoreItem).toHaveBeenCalledWith(expect.objectContaining({ id: 'rice' }), 0.8);
+    });
+
+    it('uses the current store quantity for the hint and for undo, not the one from open', async () => {
       store.takeOut.mockResolvedValue({ deleted: true, item: RICE });
       await open(RICE);
       items.set([{ ...RICE, quantity: 0.5 }]); // a refresh while the sheet is open
       fixture.detectChanges();
       type('1');
-      expect(confirm().disabled).toBe(true);
+      expect(el.querySelector('.hint')?.textContent).toContain('Only 0,5 kg left');
       type('0,5');
       expect(confirm().disabled).toBe(false);
       confirm().click();
