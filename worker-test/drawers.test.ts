@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:workers';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createDrawer, createItem } from './fixtures';
+import { createDrawer, createItem, staleDrawerCheck } from './fixtures';
 import { api } from './helpers';
 
 const send = (method: string, path: string, body?: unknown) =>
@@ -161,6 +161,21 @@ describe('DELETE /api/drawers/:id', () => {
     expect(row?.drawer_id).toBe('drawer-1');
     expect(row?.updated_by).toBe('thomas@example.com');
     expect(row!.updated_at > '2020-01-01').toBe(true);
+  });
+
+  it('400 and nothing changes when moveTo is deleted right after the check', async () => {
+    const item = await createItem({ drawerId: 'drawer-3' });
+    const dest = await createDrawer(true);
+    const res = await api(
+      `/api/drawers/drawer-3?moveTo=${dest}`,
+      { method: 'DELETE' },
+      { DB: staleDrawerCheck(env.DB, dest) },
+    );
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: { code: 'validation_failed' } });
+    expect(await activeDrawers()).toHaveLength(3);
+    const row = await env.DB.prepare('SELECT drawer_id FROM items WHERE id = ?1').bind(item.id).first<{ drawer_id: string }>();
+    expect(row?.drawer_id).toBe('drawer-3');
   });
 
   it('400 when moveTo is the drawer itself', async () => {

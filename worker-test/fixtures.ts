@@ -40,3 +40,31 @@ export async function createDrawer(deleted = false): Promise<string> {
     .run();
   return id;
 }
+
+/**
+ * A DB whose first "is drawer `id` active?" check answers yes, whatever the table says. Simulates the
+ * drawer being deleted by the other phone right after that check, so only a guard in the write
+ * statement itself can stop the write.
+ */
+export function staleDrawerCheck(db: D1Database, id: string): D1Database {
+  let used = false;
+  return new Proxy(db, {
+    get(target, prop) {
+      if (prop === 'prepare') {
+        return (sql: string) => {
+          const stmt = target.prepare(sql);
+          if (!/^SELECT 1 AS ok FROM drawers WHERE id = \?1 AND deleted_at IS NULL$/.test(sql)) return stmt;
+          return {
+            bind: (...args: unknown[]) => {
+              if (used || args[0] !== id) return stmt.bind(...args);
+              used = true;
+              return { first: async () => ({ ok: 1 }) };
+            },
+          };
+        };
+      }
+      const value = Reflect.get(target, prop, target);
+      return typeof value === 'function' ? value.bind(target) : value;
+    },
+  });
+}

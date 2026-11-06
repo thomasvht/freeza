@@ -17,6 +17,10 @@ import { parseBody } from '../http';
 type Ctx = Context<AppEnv>;
 
 const notFound = (c: Ctx) => apiError(c, 404, 'not_found', 'Item not found');
+const drawerGone = (c: Ctx) =>
+  apiError(c, 400, 'validation_failed', 'Drawer does not exist', [
+    { path: 'drawerId', message: 'Unknown or deleted drawer' },
+  ]);
 
 function getRow(c: Ctx, id: string): Promise<ItemRow | null> {
   return c.env.DB.prepare('SELECT * FROM items WHERE id = ?1').bind(id).first<ItemRow>();
@@ -37,21 +41,20 @@ itemRoutes.post('/', async (c) => {
   if (!parsed.ok) return parsed.res;
   const b = parsed.data;
 
-  if (!(await drawerIsActive(c, b.drawerId))) {
-    return apiError(c, 400, 'validation_failed', 'Drawer does not exist', [
-      { path: 'drawerId', message: 'Unknown or deleted drawer' },
-    ]);
-  }
+  if (!(await drawerIsActive(c, b.drawerId))) return drawerGone(c);
   if (await getRow(c, b.id)) return apiError(c, 409, 'conflict', 'Item id already exists');
 
   const now = new Date().toISOString();
   const email = c.var.email;
+  let inserted: D1Result;
   try {
-    await c.env.DB
+    // Guarded in the same statement: the drawer may be deleted on the other phone after the check above.
+    inserted = await c.env.DB
       .prepare(
         `INSERT INTO items (id, name, category, drawer_id, quantity, unit, pack_size, pack_unit,
            frozen_on, best_before, best_before_manual, notes, created_by, updated_by, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?13, ?14, ?14)`,
+         SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?13, ?14, ?14
+         WHERE EXISTS (SELECT 1 FROM drawers WHERE id = ?4 AND deleted_at IS NULL)`,
       )
       .bind(
         b.id, b.name, b.category, b.drawerId, b.quantity, b.unit, b.packSize, b.packUnit,
@@ -63,6 +66,7 @@ itemRoutes.post('/', async (c) => {
     if (String(err).includes('UNIQUE')) return apiError(c, 409, 'conflict', 'Item id already exists');
     throw err;
   }
+  if (inserted.meta.changes === 0) return drawerGone(c);
   const row = await getRow(c, b.id);
   return c.json(rowToItemDto(row!), 201);
 });
@@ -84,11 +88,7 @@ itemRoutes.patch('/:id', async (c) => {
   if (issues.length > 0) {
     return apiError(c, 400, 'validation_failed', 'Validation failed', issues);
   }
-  if (p.drawerId !== undefined && !(await drawerIsActive(c, p.drawerId))) {
-    return apiError(c, 400, 'validation_failed', 'Drawer does not exist', [
-      { path: 'drawerId', message: 'Unknown or deleted drawer' },
-    ]);
-  }
+  if (p.drawerId !== undefined && !(await drawerIsActive(c, p.drawerId))) return drawerGone(c);
 
   // Only write the columns present in the patch, so a concurrent take on quantity is not overwritten.
   const COLUMNS: Record<string, string> = {
@@ -106,11 +106,20 @@ itemRoutes.patch('/:id', async (c) => {
   values.push(c.var.email, new Date().toISOString(), cur.id);
   const n = values.length;
   sets.push(`updated_by = ?${n - 2}`, `updated_at = ?${n - 1}`);
+  // A move is guarded in the same statement: the drawer may be deleted after the check above.
+  let where = `id = ?${n} AND deleted_at IS NULL`;
+  if (p.drawerId !== undefined) {
+    values.push(p.drawerId);
+    where += ` AND EXISTS (SELECT 1 FROM drawers WHERE id = ?${values.length} AND deleted_at IS NULL)`;
+  }
   const res = await c.env.DB
-    .prepare(`UPDATE items SET ${sets.join(', ')} WHERE id = ?${n} AND deleted_at IS NULL RETURNING *`)
+    .prepare(`UPDATE items SET ${sets.join(', ')} WHERE ${where} RETURNING *`)
     .bind(...values)
     .first<ItemRow>();
-  if (!res) return notFound(c);
+  if (!res) {
+    if (p.drawerId !== undefined && !(await drawerIsActive(c, p.drawerId))) return drawerGone(c);
+    return notFound(c);
+  }
   return c.json(rowToItemDto(res));
 });
 

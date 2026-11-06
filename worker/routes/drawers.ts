@@ -112,8 +112,8 @@ drawerRoutes.delete('/:id', async (c) => {
     ]);
   }
 
-  // The soft-delete is guarded so the invariants hold under races: never the last active drawer,
-  // and without moveTo never a drawer that still has active items.
+  // The writes are guarded so the invariants hold under races: never the last active drawer, never a
+  // drawer that still has active items, and never a move into a drawer that is no longer active.
   const now = new Date().toISOString();
   const notLast = '(SELECT COUNT(*) FROM drawers WHERE deleted_at IS NULL) > 1';
   const statements = [];
@@ -122,13 +122,19 @@ drawerRoutes.delete('/:id', async (c) => {
       db
         .prepare(
           `UPDATE items SET drawer_id = ?1, updated_by = ?2, updated_at = ?3
-           WHERE drawer_id = ?4 AND deleted_at IS NULL AND ${notLast}`,
+           WHERE drawer_id = ?4 AND deleted_at IS NULL AND ${notLast}
+             AND EXISTS (SELECT 1 FROM drawers WHERE id = ?1 AND deleted_at IS NULL)`,
         )
         .bind(moveTo, c.var.email, now, id),
     );
+    // If the move did not happen (moveTo was deleted in between), the drawer must not be deleted either.
     statements.push(
       db
-        .prepare(`UPDATE drawers SET deleted_at = ?1 WHERE id = ?2 AND deleted_at IS NULL AND ${notLast}`)
+        .prepare(
+          `UPDATE drawers SET deleted_at = ?1
+           WHERE id = ?2 AND deleted_at IS NULL AND ${notLast}
+             AND NOT EXISTS (SELECT 1 FROM items WHERE drawer_id = ?2 AND deleted_at IS NULL)`,
+        )
         .bind(now, id),
     );
   } else {
@@ -155,6 +161,17 @@ drawerRoutes.delete('/:id', async (c) => {
     ]);
     if (!still) return apiError(c, 404, 'not_found', 'Drawer not found');
     if ((count?.n ?? 0) <= 1) return apiError(c, 409, 'last_drawer', 'The last drawer cannot be deleted');
+    if (moveTo !== undefined && (left?.n ?? 0) > 0) {
+      const dest = await db
+        .prepare('SELECT 1 AS ok FROM drawers WHERE id = ?1 AND deleted_at IS NULL')
+        .bind(moveTo)
+        .first();
+      if (!dest) {
+        return apiError(c, 400, 'validation_failed', 'moveTo must be another active drawer', [
+          { path: 'moveTo', message: 'Must be another active drawer' },
+        ]);
+      }
+    }
     if (moveTo === undefined && (left?.n ?? 0) > 0) {
       return apiError(c, 400, 'validation_failed', 'moveTo is required when the drawer has items', [
         { path: 'moveTo', message: 'Required when the drawer has items' },

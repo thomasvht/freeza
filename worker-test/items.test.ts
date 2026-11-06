@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:workers';
 import { describe, expect, it } from 'vitest';
-import { createDrawer, createItem, json, newItem } from './fixtures';
+import { createDrawer, createItem, json, newItem, staleDrawerCheck } from './fixtures';
 import { api } from './helpers';
 
 const send = (method: string, path: string, body?: unknown) =>
@@ -42,6 +42,15 @@ describe('POST /api/items', () => {
     expect(res.status).toBe(400);
   });
 
+  it('400 and no row when the drawer is deleted right after the check', async () => {
+    const drawerId = await createDrawer(true);
+    const body = newItem({ drawerId });
+    const res = await api('/api/items', json(body), { DB: staleDrawerCheck(env.DB, drawerId) });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: { code: 'validation_failed' } });
+    expect(await env.DB.prepare('SELECT 1 FROM items WHERE id = ?1').bind(body.id).first()).toBeNull();
+  });
+
   it('400 on invalid JSON', async () => {
     const res = await api('/api/items', { method: 'POST', body: '{nope' });
     expect(res.status).toBe(400);
@@ -77,6 +86,20 @@ describe('PATCH /api/items/:id', () => {
     const item = await createItem();
     const res = await send('PATCH', `/api/items/${item.id}`, { drawerId: await createDrawer(true) });
     expect(res.status).toBe(400);
+  });
+
+  it('400 and no move when the drawer is deleted right after the check', async () => {
+    const item = await createItem();
+    const drawerId = await createDrawer(true);
+    const res = await api(
+      `/api/items/${item.id}`,
+      { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ drawerId }) },
+      { DB: staleDrawerCheck(env.DB, drawerId) },
+    );
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: { code: 'validation_failed' } });
+    const row = await env.DB.prepare('SELECT drawer_id FROM items WHERE id = ?1').bind(item.id).first<{ drawer_id: string }>();
+    expect(row?.drawer_id).toBe('drawer-1');
   });
 
   it('moves to an active drawer', async () => {
