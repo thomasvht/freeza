@@ -4,7 +4,7 @@ Freeza is a freezer inventory app for two people. It's a phone-first PWA: add wh
 
 It runs entirely on Cloudflare:
 
-- One Worker serves the Angular 21 build and a Hono API under `/api`.
+- One Worker serves the Angular 22 build and a Hono API under `/api`.
 - D1 stores the data.
 - Cloudflare Access (one-time PIN) controls who gets in.
 - Workers AI suggests recipes (20 requests a day).

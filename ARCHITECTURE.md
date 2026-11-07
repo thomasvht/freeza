@@ -281,7 +281,7 @@ reaches Access.
 
 ## 7. Frontend
 
-- **Angular 21:**
+- **Angular 22:**
   - standalone components
   - zoneless change detection (`provideZonelessChangeDetection`)
   - signals for all state

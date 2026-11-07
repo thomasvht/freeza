@@ -1,6 +1,6 @@
 # Freeza – agent guide
 
-A freezer inventory PWA for one household (two users, phones first). Angular 21
+A freezer inventory PWA for one household (two users, phones first). Angular 22
 frontend and a Cloudflare Worker API with D1, behind Cloudflare Access.
 
 - Product and visual design: [DESIGN.md](DESIGN.md)
