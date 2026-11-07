@@ -42,15 +42,15 @@ Decisions marked **(decided)** came from the owner. Decisions marked
 
 ## 2. Feature review
 
-### Kept from the current app
+### Kept from the Firebase app
 
 | Feature | Change |
 |---|---|
 | Items: name, category, quantity, unit, storage date, expiry date, notes | Renamed: "Frozen on" and "Best before". Unit becomes a picker. Drawer added. |
 | Category colours | Category list extended (see 4.2). |
-| Expiry status: expired / expiring soon / fresh | One threshold: **14 days** for "use soon". The current code has 7 and 3 in different places. |
+| Expiry status: expired / expiring soon / fresh | One threshold: **14 days** for "use soon". The Firebase app had 7 and 3 in different places. |
 | Sorted by expiry | Kept inside each drawer group, and in the "Use first" strip. |
-| Search and category filter | Kept, and fixed (the current filter never updates). |
+| Search and category filter | Kept, and fixed (the Firebase app's filter never updated). |
 | Totals footer | Replaced by counts in the section headers and in "Use first". |
 
 ### Removed
