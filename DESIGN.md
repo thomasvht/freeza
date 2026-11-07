@@ -372,6 +372,9 @@ becomes solid `--glass-fallback`: `#e8f4fb` in light, `#13304a` in dark.
 - The logo is a 6-armed line snowflake in `--accent`.
 - The app icon is a white snowflake on the light `--bg` gradient. It needs a
   maskable variant for Android.
+- The favicon is an 8-bit pixel snowflake: a 16 × 16 grid with the flake in
+  `--accent` (light) and a white centre, on a pixel tile in the light `--bg`
+  blues. `public/favicon.svg` and `public/favicon.ico` (16, 32, 48 px).
 - Snow specks: a static layer of 6–10 small dots behind the content, opacity
   1 in light mode and 0.5 in dark mode.
 
