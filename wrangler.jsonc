@@ -24,12 +24,6 @@
 			"database_name": "freeza-db",
 			"database_id": "72fd9c88-0f34-4926-be2a-45e2fb74113c",
 			"migrations_dir": "migrations"
-		},
-		{
-			"binding": "freeza_db",
-			"database_name": "freeza-db",
-			"database_id": "72fd9c88-0f34-4926-be2a-45e2fb74113c",
-			"remote": true
 		}
 	],
 	"ai": {
@@ -39,7 +33,7 @@
 	"keep_vars": true,
 	"vars": {
 		"ENVIRONMENT": "production",
-		"ACCESS_TEAM_DOMAIN": "<team>.cloudflareaccess.com",
-		"ACCESS_AUD": "<aud-tag>"
+		"ACCESS_TEAM_DOMAIN": "freeza-ki-tho.cloudflareaccess.com",
+		"ACCESS_AUD": "7fdfa014f7a477786ae5640a4013b2fb27010a7ebc9ede714fdeb6e267ae074b"
 	}
 }
