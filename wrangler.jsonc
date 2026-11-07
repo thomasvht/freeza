@@ -29,8 +29,6 @@
 	"ai": {
 		"binding": "AI"
 	},
-	// Keep ALLOWED_EMAILS, which is set in the Cloudflare dashboard.
-	"keep_vars": true,
 	"vars": {
 		"ENVIRONMENT": "production",
 		"ACCESS_TEAM_DOMAIN": "freeza-ki-tho.cloudflareaccess.com",

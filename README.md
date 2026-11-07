@@ -97,14 +97,15 @@ Put both in `vars`:
 
 Neither value is secret. Commit them.
 
-### 6. Set `ALLOWED_EMAILS` in the dashboard
+### 6. Set the `ALLOWED_EMAILS` secret
 
-The Worker double-checks the signed-in email against `ALLOWED_EMAILS`, a comma-separated list. It's personal data, so it stays out of the repo.
+The Worker double-checks the signed-in email against `ALLOWED_EMAILS`, a comma-separated list. It's personal data, so it stays out of the repo. Store it as a Worker secret with Wrangler, after the first deploy (step 8):
 
-`wrangler.jsonc` sets `"keep_vars": true`, so `wrangler deploy` keeps variables you set in the dashboard instead of deleting them. The Worker has to exist before you can set a variable, so do this after the first deploy (step 8):
+```sh
+echo "you@example.com,partner@example.com" | npx wrangler secret put ALLOWED_EMAILS
+```
 
-1. In the dashboard open **Workers & Pages > freeza > Settings > Variables and Secrets**.
-2. Add a plain-text variable `ALLOWED_EMAILS` with the two addresses separated by a comma, with no spaces.
+Use the real addresses, separated by a comma, with no spaces. The secret takes effect at once and survives later deploys. Check it with `npx wrangler secret list`.
 
 Until it's set, the Worker refuses every request with `403`.
 

@@ -352,7 +352,6 @@ reaches Access.
       "migrations_dir": "migrations" }
   ],
   "ai": { "binding": "AI" },
-  "keep_vars": true,                 // keep ALLOWED_EMAILS set in the dashboard
   "vars": {
     "ENVIRONMENT": "production",
     "ACCESS_TEAM_DOMAIN": "<team>.cloudflareaccess.com",
@@ -365,11 +364,11 @@ reaches Access.
   `wrangler dev`.
 - Types for bindings are generated with `wrangler types` into
   `worker-configuration.d.ts`.
-- No secrets are needed: Access and AI are bindings or public values.
-- `ALLOWED_EMAILS` (comma-separated) isn't secret, but it's personal data. Set
-  it as a variable in the Cloudflare dashboard, never in the repo.
-  `keep_vars: true` stops `wrangler deploy` from removing it. Put it in
-  `.dev.vars` for local runs.
+- Access and AI need no secrets: they are bindings or public values.
+- `ALLOWED_EMAILS` (comma-separated) is personal data, so it never goes in the
+  repo. Set it as a Worker secret with
+  `npx wrangler secret put ALLOWED_EMAILS`; `wrangler deploy` leaves secrets
+  alone. Put it in `.dev.vars` for local runs.
 
 ## 9. Local development
 
