@@ -88,7 +88,7 @@ One npm package, one repo.
 │  └─ index.html                Inline theme bootstrap script (no flash)
 ├─ public/                      Icons (incl. maskable), favicon
 ├─ e2e/                         Playwright smoke tests
-└─ .github/workflows/           ci.yml, deploy.yml
+└─ .github/workflows/           ci.yml (deploys run in Workers Builds)
 ```
 
 `shared/` is imported by both sides through a tsconfig path alias
@@ -379,14 +379,17 @@ reaches Access.
 | `npm test` | Angular unit tests (Vitest) + Worker tests (`@cloudflare/vitest-plugin`, Miniflare D1) |
 | `npm run e2e` | Playwright smoke tests against `wrangler dev` with a built app |
 | `npm run build` | `ng build` (production) |
-| `npm run deploy` | Migrations `--remote`, then `wrangler deploy` (normally done by CI) |
+| `npm run deploy` | Migrations `--remote`, then `wrangler deploy` (normally done by Workers Builds) |
 
 Workers AI calls in local dev go to the real service and use the daily
 allowance. Worker tests mock `env.AI`.
 
-## 10. CI/CD (GitHub Actions)
+## 10. CI/CD
 
-- **`ci.yml`** (pull requests):
+The Node version is pinned in `.node-version` (major 24), which both GitHub
+Actions and Workers Builds read. Angular 22 needs Node `^22.22.3 || ^24.15.0`.
+
+- **`ci.yml`** (GitHub Actions, pull requests):
   1. `npm ci` (without `--legacy-peer-deps`: the peer conflict came from
      `@angular/fire`)
   2. type-check
@@ -398,13 +401,15 @@ allowance. Worker tests mock `env.AI`.
   and would run before its migrations were applied. Testing happens locally
   and in CI. Disable preview URLs in `wrangler.jsonc` (`"preview_urls":
   false`, *verify* the key), so there's no unprotected hostname.
-- **`deploy.yml`** (push to `main`), using `cloudflare/wrangler-action@v4`:
-  1. test
-  2. build
-  3. `wrangler d1 migrations apply freeza-db --remote`
-  4. `wrangler deploy`
-- **Repository secrets:** `CLOUDFLARE_API_TOKEN` (Workers Scripts:Edit, D1:Edit
-  and Workers AI permissions) and `CLOUDFLARE_ACCOUNT_ID`.
+- **Workers Builds** (Cloudflare, push to `main`), configured in the dashboard
+  under the Worker's **Settings > Build**:
+  1. build command: `npx tsc -p worker/tsconfig.json && npm test && npm run build`
+  2. deploy command: `npm run deploy`, which runs
+     `wrangler d1 migrations apply freeza-db --remote`, then `wrangler deploy`
+  3. builds for non-production branches are off, for the same reason as the
+     previews above
+- **Build token:** the API token Workers Builds creates, plus **D1:Edit** for
+  the migrations. No Cloudflare secrets are stored in GitHub.
 
 ## 11. Migration from the Firebase app
 

@@ -109,16 +109,20 @@ Use the real addresses, separated by a comma, with no spaces. The secret takes e
 
 Until it's set, the Worker refuses every request with `403`.
 
-### 7. Create an API token and add the GitHub secrets
+### 7. Connect Workers Builds
 
-1. In the dashboard open **My Profile > API Tokens > Create Token** and use the **Edit Cloudflare Workers** template.
-2. Scope it to your account and to the `ki-tho.be` zone only, then add one permission: **Account > D1 > Edit**.
+Cloudflare builds and deploys the Worker from the repository.
 
-   If the first deploy reports a missing permission, add exactly that one and redeploy.
-3. Create the token and copy it. You only see it once.
-4. In GitHub open the repository's **Settings > Secrets and variables > Actions** and add:
-   - `CLOUDFLARE_API_TOKEN`: the token
-   - `CLOUDFLARE_ACCOUNT_ID`: your account id (shown on the Workers & Pages overview)
+1. In the dashboard open the `freeza` Worker, then **Settings > Build**, and connect the GitHub repository.
+2. Set the build settings:
+   - **Production branch:** `main`
+   - **Build command:** `npx tsc -p worker/tsconfig.json && npm test && npm run build`
+   - **Deploy command:** `npm run deploy`
+   - **Root directory:** `/`
+3. Switch off **Builds for non-production branches**. A branch build would upload a version that shares the production database.
+4. Give the build's API token **Account > D1 > Edit**, so the deploy command can apply migrations. If a build reports another missing permission, add exactly that one and rebuild.
+
+The Node version comes from `.node-version`. Angular 22 refuses older Node 22 releases, so keep that file.
 
 ### 8. Deploy
 
@@ -131,11 +135,11 @@ Then sign in with a one-time PIN.
 
 ## Deploying
 
-Merge to `main`. The `Deploy` workflow type-checks the Worker, runs the tests, builds, applies D1 migrations to the remote database and deploys. Deploys never run at the same time.
+Merge to `main`. Workers Builds type-checks the Worker, runs the tests, builds, applies D1 migrations to the remote database and deploys. A failing step stops the deploy. Follow builds in the dashboard under the Worker's **Deployments > Builds**.
 
-Pull requests run `CI` (type-check, tests, build) and don't deploy. There are no preview deployments: a preview would share the production database.
+Pull requests run the `CI` GitHub workflow (type-check, tests, build) and don't deploy. There are no preview deployments: a preview would share the production database.
 
-Don't connect the Worker to the repository through **Workers Builds** (Worker > Settings > Build). It would deploy alongside the `Deploy` workflow without applying migrations, and build a preview for every branch. Creating the Worker in the dashboard can switch it on, so check that no repository is connected.
+Don't add a GitHub deploy workflow next to Workers Builds. Two deployers would race, and only one of them would apply migrations first.
 
 To deploy by hand (after `npm run build`):
 
