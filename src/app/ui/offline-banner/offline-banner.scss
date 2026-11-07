@@ -1,0 +1,42 @@
+:host {
+  position: fixed;
+  top: env(safe-area-inset-top);
+  left: 0;
+  right: 0;
+  z-index: 15;
+  display: flex;
+  justify-content: center;
+  padding: 8px calc(16px + env(safe-area-inset-right)) 0 calc(16px + env(safe-area-inset-left));
+  pointer-events: none;
+}
+
+.banner {
+  pointer-events: auto;
+  max-width: 560px;
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-fallback);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+  font-weight: 700;
+  text-align: center;
+}
+
+.session {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: transparent;
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .offline {
+    background: var(--glass-strong);
+    backdrop-filter: blur(var(--blur));
+  }
+}

@@ -1,0 +1,16 @@
+// Frosted glass panel (DESIGN.md §6.1). Solid fallback where backdrop-filter is unsupported.
+// $strength: 'normal' for cards, 'strong' for the tab bar, sheets and inputs.
+@mixin glass($strength: 'normal') {
+  @if $strength == 'strong' {
+    background: var(--glass-strong);
+  } @else {
+    background: var(--glass);
+  }
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(var(--blur));
+  backdrop-filter: blur(var(--blur));
+
+  @supports not (backdrop-filter: blur(1px)) {
+    background: var(--glass-fallback);
+  }
+}

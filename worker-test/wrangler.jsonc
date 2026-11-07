@@ -1,0 +1,8 @@
+{
+  // Test-only config: same Worker and D1 binding as ../wrangler.jsonc, but without the
+  // `ai` binding (it always talks to remote resources). Tests stub AI in helpers.ts.
+  "name": "freeza-test",
+  "main": "../worker/index.ts",
+  "compatibility_date": "2026-11-01",
+  "d1_databases": [{ "binding": "DB", "database_name": "freeza-db", "database_id": "test" }],
+}

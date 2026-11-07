@@ -1,0 +1,51 @@
+:host {
+  display: contents;
+}
+
+h2 {
+  margin-bottom: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: var(--glass-strong);
+}
+
+.cancel {
+  min-width: 44px;
+  min-height: 48px;
+  padding: 0 12px;
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
+.confirm {
+  flex: 1;
+  min-height: 48px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 800;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}

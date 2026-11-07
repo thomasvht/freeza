@@ -1,0 +1,73 @@
+// Glacier colour tokens: DESIGN.md §6.2. Components use these, never raw colours.
+// Light on :root; dark under prefers-color-scheme unless data-theme="light", and always under
+// data-theme="dark" (ARCHITECTURE.md §7).
+
+@mixin light {
+  color-scheme: light;
+  --bg: radial-gradient(120% 70% at 20% 0%, #ffffff 0%, #bfe3f7 40%, #a3d3ef 100%);
+  --bg-solid: #bfe3f7;
+  --ink: #0b2236;
+  --muted: #355a76;
+  --glass: rgba(255, 255, 255, 0.6);
+  --glass-strong: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --glass-fallback: #e8f4fb;
+  --blur: 22px;
+  --shadow: 0 10px 30px rgba(20, 80, 130, 0.22);
+  --accent: #0b6fb0;
+  --on-accent: #ffffff;
+  --accent-ink: #0a5288;
+  --accent-soft: rgba(255, 255, 255, 0.5);
+  --fresh: #146346;
+  --soon: #7f4b06;
+  --expired: #a02a36;
+  --snow: #ffffff;
+  --snow-opacity: 1;
+}
+
+@mixin dark {
+  color-scheme: dark;
+  --bg: radial-gradient(120% 70% at 20% 0%, #143653 0%, #0d2740 45%, #050d18 100%);
+  --bg-solid: #0d2740;
+  --ink: #e9f6ff;
+  --muted: #a9cde6;
+  --glass: rgba(140, 200, 245, 0.12);
+  --glass-strong: rgba(140, 200, 245, 0.18);
+  --glass-border: rgba(180, 225, 255, 0.25);
+  --glass-fallback: #13304a;
+  --blur: 22px;
+  --shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  --accent: #5ab9f2;
+  --on-accent: #04121f;
+  --accent-ink: #b5e2ff;
+  --accent-soft: rgba(72, 176, 240, 0.18);
+  --fresh: #9ae8c8;
+  --soon: #f7d29a;
+  --expired: #fac0c7;
+  --snow: #ffffff;
+  --snow-opacity: 0.5;
+}
+
+:root {
+  @include light;
+
+  // Category colours: the same in both themes.
+  --cat-meat: #e06a6a;
+  --cat-poultry: #e89a5a;
+  --cat-fish: #4aa3c9;
+  --cat-veg: #4fb37f;
+  --cat-bread: #c9a05a;
+  --cat-dairy: #e3c55a;
+  --cat-prepared: #9a7fd6;
+  --cat-other: #8a9aab;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    @include dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  @include dark;
+}
