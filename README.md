@@ -134,6 +134,8 @@ Merge to `main`. The `Deploy` workflow type-checks the Worker, runs the tests, b
 
 Pull requests run `CI` (type-check, tests, build) and don't deploy. There are no preview deployments: a preview would share the production database.
 
+Don't connect the Worker to the repository through **Workers Builds** (Worker > Settings > Build). It would deploy alongside the `Deploy` workflow without applying migrations, and build a preview for every branch. Creating the Worker in the dashboard can switch it on, so check that no repository is connected.
+
 To deploy by hand (after `npm run build`):
 
 ```sh
@@ -148,7 +150,4 @@ That applies the remote migrations (`wrangler d1 migrations apply freeza-db --re
 
 ## Decommissioning Firebase
 
-The old version of Freeza ran on Firebase. No data is migrated; the new app starts empty. After you've checked that the new app works, do these by hand:
-
-1. Delete the `freeza-inventory` project in the Firebase console.
-2. Delete the `FIREBASE_SERVICE_ACCOUNT_FREEZA_INVENTORY` secret in the GitHub repository settings.
+The old version of Freeza ran on Firebase. No data is migrated; the new app starts empty. The `FIREBASE_SERVICE_ACCOUNT_FREEZA_INVENTORY` GitHub secret has been deleted. One step remains, by hand: delete the `freeza-inventory` project in the Firebase console.
