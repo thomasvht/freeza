@@ -421,8 +421,9 @@ allowance. Worker tests mock `env.AI`.
 - **Data:** none is migrated. The old data is outdated, and the new app starts
   empty **(decided)**.
 - **Outside the repo**, for the owner to do after the switch: delete the
-  `freeza-inventory` Firebase project and the
-  `FIREBASE_SERVICE_ACCOUNT_FREEZA_INVENTORY` GitHub secret.
+  `freeza-inventory` Firebase project. The
+  `FIREBASE_SERVICE_ACCOUNT_FREEZA_INVENTORY` GitHub secret is already
+  deleted.
 - The existing presentational components (header, item card, filter section,
   form) are rebuilt to the new design rather than ported. Their logic is
   small, and the layout changes completely.
