@@ -6,8 +6,8 @@ design are in [DESIGN.md](DESIGN.md). Agent working rules are in
 
 Decisions marked **(decided)** came from the owner. Everything else is the
 author's call and can be changed. Facts about Cloudflare were checked against
-developers.cloudflare.com on 05/11/2026; items marked *verify* weren't confirmed
-and must be checked during implementation.
+developers.cloudflare.com on 05/11/2026; items marked *verify* weren't
+confirmed and are still open.
 
 ## 1. Overview
 
@@ -46,7 +46,7 @@ custom domain.
 | Workers | 100,000 requests/day; 10 ms CPU per request | 2 users × polling every 30 s while open ≈ a few thousand requests/day |
 | D1 | 500 MB per database, 5 GB per account, 50 queries per invocation | Kilobytes |
 | Workers AI | 10,000 neurons/day, resets 00:00 UTC; on the free plan requests fail after that | Capped by the app at 20 recipe requests/day (§6) |
-| Access | Free for small teams (*verify*: commonly 50 users) | 2 users |
+| Access | Free plan: up to 50 users | 2 users |
 
 The 10 ms CPU limit matters. JWT verification (RS256) and the D1 queries fit.
 Waiting on D1 or AI doesn't count as CPU time. Avoid heavy JSON work in the
@@ -66,23 +66,32 @@ One npm package, one repo.
 ├─ shared/                      Code used by both the client and the Worker
 │  ├─ categories.ts             Category keys, labels, colour tokens, shelf life
 │  ├─ units.ts                  Unit keys and rules (counted vs measured)
+│  ├─ expiry.ts                 expiryStatus (14 days), best-before suggestion
+│  ├─ item-rules.ts             Shared item validation rules
+│  ├─ dates.ts  decimal.ts      YYYY-MM-DD and decimal helpers
 │  └─ api-types.ts              Request/response types + zod schemas
 ├─ worker/
 │  ├─ index.ts                  Hono app, export default { fetch }
 │  ├─ access.ts                 Access JWT middleware
 │  ├─ routes/                   inventory.ts items.ts drawers.ts me.ts recipes.ts
 │  ├─ db.ts                     D1 helpers (row ↔ DTO mapping)
+│  ├─ env.ts  errors.ts  http.ts  Bindings type, error shape, body validation
+│  ├─ display-name.ts           Default display name from the email
 │  └─ recipes/prompt.ts         Prompt and JSON schema for Workers AI
 ├─ worker-test/                 Vitest tests run in the Workers runtime
 ├─ src/                         Angular app
 │  ├─ app/
-│  │  ├─ core/                  api.client.ts, inventory.store.ts,
-│  │  │                         theme.service.ts, connectivity.service.ts, format.ts
-│  │  ├─ features/freezer/      freezer page, item card, use-first strip, drawer group
+│  │  ├─ core/                  api.client.ts, inventory.store.ts, session.service.ts,
+│  │  │                         theme.service.ts, connectivity.service.ts,
+│  │  │                         toast.service.ts, format.ts
+│  │  ├─ strings.ts             All UI text
+│  │  ├─ features/freezer/      freezer page, item card, use-first strip, drawer
+│  │  │                         group, category chips
 │  │  ├─ features/item-sheet/   add/edit sheet, take-out sheet
 │  │  ├─ features/recipes/      recipes page
 │  │  ├─ features/settings/     settings page
-│  │  └─ ui/                    tab bar, toast, chip, stepper, empty state
+│  │  └─ ui/                    tab bar, toast host, sheet, stepper, empty state,
+│  │                            offline banner
 │  ├─ styles/                   tokens.scss, base.scss, glass.scss
 │  ├─ manifest.webmanifest
 │  └─ index.html                Inline theme bootstrap script (no flash)
@@ -91,8 +100,8 @@ One npm package, one repo.
 └─ .github/workflows/           ci.yml (deploys run in Workers Builds)
 ```
 
-`shared/` is imported by both sides through a tsconfig path alias
-(`@shared/*`). It must stay free of Angular and Worker imports.
+The app imports `shared/` through a tsconfig path alias (`@shared/*`); the
+Worker uses relative imports. It must stay free of Angular and Worker imports.
 
 ## 3. Data model (D1)
 
@@ -205,7 +214,7 @@ The response is small. No ETag is needed at this size; add one if it grows.
 
 ## 5. Identity and Cloudflare Access
 
-**Access setup** (done by hand in the Zero Trust dashboard; the README gets a
+**Access setup** (done by hand in the Zero Trust dashboard; the README has a
 step-by-step section):
 
 0. If needed, create the Zero Trust organisation (free plan) and pick a team
@@ -331,7 +340,8 @@ reaches Access.
 
 ## 8. Configuration
 
-`wrangler.jsonc` (sketch, the values are filled in during setup):
+`wrangler.jsonc` (shape; the real file holds the actual ids, none of them
+secret):
 
 ```jsonc
 {
@@ -340,7 +350,7 @@ reaches Access.
   "compatibility_date": "2026-11-01",
   "routes": [{ "pattern": "freeza.ki-tho.be", "custom_domain": true }],
   "workers_dev": false,
-  "preview_urls": false,             // verify key name
+  "preview_urls": false,
   "assets": {
     "directory": "./dist/freeza/browser",
     "binding": "ASSETS",
@@ -399,8 +409,8 @@ Actions and Workers Builds read. Angular 22 needs Node `^22.22.3 || ^24.15.0`.
   There are no per-PR preview deployments in version 1 (*builder's call*). A
   preview version would share the production D1 database and AI allowance,
   and would run before its migrations were applied. Testing happens locally
-  and in CI. Disable preview URLs in `wrangler.jsonc` (`"preview_urls":
-  false`, *verify* the key), so there's no unprotected hostname.
+  and in CI. Preview URLs are off in `wrangler.jsonc` (`"preview_urls":
+  false`), so there's no unprotected hostname.
 - **Workers Builds** (Cloudflare, push to `main`), configured in the dashboard
   under the Worker's **Settings > Build**:
   1. build command: `npx tsc -p worker/tsconfig.json && npm test && npm run build`
@@ -413,7 +423,7 @@ Actions and Workers Builds read. Angular 22 needs Node `^22.22.3 || ^24.15.0`.
 
 ## 11. Migration from the Firebase app
 
-- **Remove from the repo:**
+- **Removed from the repo:**
   - `firebase.json`, `.firebaserc`, `firestore.rules`, `firestore.indexes.json`
   - both `firebase-hosting-*.yml` workflows
   - `firebase.config.ts`, `auth.service.ts`, `firebase-data.service.ts`,
@@ -421,7 +431,7 @@ Actions and Workers Builds read. Angular 22 needs Node `^22.22.3 || ^24.15.0`.
   - the `login`, `signup` and `auth-shell` components
   - the `environments` file replacement in `angular.json`
   - the `firebase` and `@angular/fire` dependencies
-  - the committed `.DS_Store` (and add it to `.gitignore`)
+  - the committed `.DS_Store` (now in `.gitignore`)
 - **Data:** none is migrated. The old data is outdated, and the new app starts
   empty **(decided)**.
 - **Outside the repo**, for the owner to do after the switch: delete the

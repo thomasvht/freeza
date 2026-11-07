@@ -59,7 +59,7 @@ You need `wrangler` logged in (`npx wrangler login`) for steps 1 and 2.
 npx wrangler d1 create freeza-db
 ```
 
-Copy the `database_id` from the output and replace the placeholder (`00000000-0000-0000-0000-000000000000`) in `wrangler.jsonc` under `d1_databases`. The id isn't a secret, so you can commit it.
+Copy the `database_id` from the output into `wrangler.jsonc` under `d1_databases`. The id isn't a secret, so you can commit it. The committed `wrangler.jsonc` already holds the id of the live database; only replace it if you create a new one.
 
 ### 2. Create the Zero Trust organisation
 
@@ -95,7 +95,7 @@ Put both in `vars`:
 }
 ```
 
-Neither value is secret. Commit them.
+Neither value is secret. Commit them. The committed `wrangler.jsonc` already holds the values for the live Access application.
 
 ### 6. Set the `ALLOWED_EMAILS` secret
 

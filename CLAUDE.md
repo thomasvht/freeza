@@ -28,9 +28,10 @@ Run `npm test` and `npm run build` before you say a change is done.
 ## Layout
 
 - `src/`: the Angular app.
-  - `core/`: API client, store, services.
-  - `features/`: pages and sheets.
-  - `ui/`: shared components.
+  - `app/core/`: API client, store, services.
+  - `app/features/`: pages and sheets.
+  - `app/ui/`: shared components.
+  - `app/strings.ts`: all UI text.
   - `styles/`: tokens and the glass mixin.
 - `worker/`: the Hono API. `access.ts` is the auth middleware.
 - `shared/`: code used by both the app and the Worker (categories, units, API
