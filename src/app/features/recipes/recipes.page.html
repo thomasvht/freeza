@@ -1,0 +1,61 @@
+<h1 class="t-title">{{ title }}</h1>
+
+<form class="ask-form" (submit)="$event.preventDefault(); ask()">
+  <label class="t-label" for="preference">{{ s.preference }}</label>
+  <input
+    id="preference"
+    class="preference"
+    type="text"
+    autocomplete="off"
+    [attr.maxlength]="preferenceMax"
+    [placeholder]="s.preferencePlaceholder"
+    [value]="preference()"
+    (input)="preference.set($any($event.target).value)"
+  />
+  <button type="submit" class="ask" [disabled]="!canAsk()">{{ s.ask }}</button>
+</form>
+
+<p class="message" role="status">{{ message() }}</p>
+
+@if (loading()) {
+  <ul class="list" role="list" [attr.aria-label]="s.loading" aria-busy="true">
+    @for (n of skeletons; track n) {
+      <li class="skeleton"></li>
+    }
+  </ul>
+} @else if (recipes().length > 0) {
+  <ul class="list" role="list">
+    @for (recipe of recipes(); track $index) {
+      <li class="recipe">
+        <div class="head">
+          <h2 class="t-item">{{ recipe.name }}</h2>
+          <span class="minutes">{{ minutes(recipe) }}</span>
+        </div>
+        @if (recipe.uses.length > 0) {
+          <h3 class="t-label">{{ s.uses }}</h3>
+          <ul class="uses" role="list">
+            @for (use of recipe.uses; track $index) {
+              <li
+                class="use"
+                [class.soon]="use.status === 'use-soon'"
+                [class.expired]="use.status === 'expired'"
+              >
+                {{ use.name }}
+                @if (use.status === 'use-soon') {
+                  <span class="flag">({{ s.useSoon }})</span>
+                } @else if (use.status === 'expired') {
+                  <span class="flag">({{ s.expired }})</span>
+                }
+              </li>
+            }
+          </ul>
+        }
+        @if (recipe.alsoNeed.length > 0) {
+          <h3 class="t-label">{{ s.alsoNeed }}</h3>
+          <p class="also">{{ recipe.alsoNeed.join(', ') }}</p>
+        }
+        <p class="method">{{ recipe.method }}</p>
+      </li>
+    }
+  </ul>
+}

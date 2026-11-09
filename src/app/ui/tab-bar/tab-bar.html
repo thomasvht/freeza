@@ -1,0 +1,21 @@
+<nav class="bar" [attr.aria-label]="s.label">
+  <a
+    class="tab"
+    routerLink="/"
+    routerLinkActive="active"
+    [routerLinkActiveOptions]="exactPath"
+    ariaCurrentWhenActive="page"
+  >
+    <svg lucideSnowflake [size]="24" [strokeWidth]="2" aria-hidden="true"></svg>
+    <span>{{ s.freezer }}</span>
+  </a>
+
+  <button type="button" class="add" [attr.aria-label]="s.add" [disabled]="!connectivity.online()" (click)="onAdd()">
+    <svg lucidePlus [size]="28" [strokeWidth]="2" aria-hidden="true"></svg>
+  </button>
+
+  <a class="tab" routerLink="/recipes" routerLinkActive="active" ariaCurrentWhenActive="page">
+    <svg lucideChefHat [size]="24" [strokeWidth]="2" aria-hidden="true"></svg>
+    <span>{{ s.recipes }}</span>
+  </a>
+</nav>

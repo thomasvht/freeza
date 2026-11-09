@@ -1,0 +1,57 @@
+@use '../../../styles/glass' as *;
+
+:host {
+  position: fixed;
+  left: 50%;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 10;
+  width: min(100% - 32px, 480px);
+  transform: translateX(-50%);
+}
+
+.bar {
+  @include glass('strong');
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+
+  &.active {
+    color: var(--accent-ink);
+  }
+}
+
+.add {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-top: -20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow);
+}
+
+.add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

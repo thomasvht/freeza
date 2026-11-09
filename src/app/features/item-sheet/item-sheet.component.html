@@ -1,0 +1,150 @@
+<app-sheet [label]="title" (closed)="close()">
+  <h2 class="t-title">{{ title }}</h2>
+
+  <div class="field name">
+    <label for="f-name" class="t-label">{{ s.name }}</label>
+    <input
+      id="f-name"
+      name="name"
+      type="text"
+      autocomplete="off"
+      role="combobox"
+      aria-autocomplete="list"
+      aria-controls="f-suggestions"
+      data-autofocus
+      [attr.aria-expanded]="matches().length > 0"
+      [attr.aria-activedescendant]="activeIndex() >= 0 ? 'sug-' + activeIndex() : null"
+      [formControl]="form.controls.name"
+      (input)="onNameInput()"
+      (keydown)="onNameKeydown($event)"
+    />
+    @if (matches().length > 0) {
+      <ul id="f-suggestions" class="suggestions" role="listbox" [attr.aria-label]="s.suggestions">
+        @for (m of matches(); track m.name; let i = $index) {
+          <li
+            role="option"
+            [id]="'sug-' + i"
+            [attr.aria-selected]="i === activeIndex()"
+            (mousedown)="$event.preventDefault()"
+            (click)="pickSuggestion(m)"
+          >
+            {{ m.name }}
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <div class="field">
+    <span class="t-label" id="l-category">{{ s.category }}</span>
+    <div class="chips" role="group" aria-labelledby="l-category">
+      @for (c of categories; track c.key) {
+        <button
+          type="button"
+          class="chip"
+          [attr.data-category]="c.key"
+          [attr.aria-pressed]="raw().category === c.key"
+          (click)="pickCategory(c.key)"
+        >
+          {{ c.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="field">
+    <span class="t-label" id="l-drawer">{{ s.drawer }}</span>
+    <div class="chips" role="group" aria-labelledby="l-drawer">
+      @for (d of drawers(); track d.id) {
+        <button
+          type="button"
+          class="chip"
+          [attr.data-drawer]="d.id"
+          [attr.aria-pressed]="raw().drawerId === d.id"
+          (click)="pickDrawer(d.id)"
+        >
+          {{ d.name }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <span class="t-label">{{ s.quantity }}</span>
+      <app-stepper [control]="form.controls.quantity" [step]="step()" />
+    </div>
+    <div class="field grow">
+      <label for="f-unit" class="t-label">{{ s.unit }}</label>
+      <select id="f-unit" name="unit" [formControl]="form.controls.unit">
+        @for (u of units; track u.value) {
+          <option [value]="u.value">{{ u.label }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  @if (counted()) {
+    <div class="row">
+      <div class="field grow">
+        <label for="f-pack" class="t-label">{{ s.packSize }}</label>
+        <input
+          id="f-pack"
+          name="packSize"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          [formControl]="form.controls.packSize"
+        />
+      </div>
+      <div class="field">
+        <label for="f-pack-unit" class="t-label">{{ s.packUnit }}</label>
+        <select id="f-pack-unit" name="packUnit" [formControl]="form.controls.packUnit">
+          @for (u of packUnits; track u) {
+            <option [value]="u">{{ u }}</option>
+          }
+        </select>
+      </div>
+    </div>
+  }
+
+  <div class="row">
+    <div class="field grow">
+      <label for="f-frozen" class="t-label">{{ s.frozenOn }}</label>
+      <input id="f-frozen" name="frozenOn" type="date" [formControl]="form.controls.frozenOn" />
+    </div>
+    <div class="field grow">
+      <label for="f-best" class="t-label">
+        {{ s.bestBefore }}
+        @if (!manual()) {
+          <span class="suggested">{{ s.suggested }}</span>
+        }
+      </label>
+      <input
+        id="f-best"
+        name="bestBefore"
+        type="date"
+        [formControl]="form.controls.bestBefore"
+        (input)="manual.set(true)"
+      />
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="f-notes" class="t-label">{{ s.notes }}</label>
+    <textarea id="f-notes" name="notes" rows="2" [formControl]="form.controls.notes"></textarea>
+  </div>
+
+  @if (addedBy(); as line) {
+    <p class="added-by">{{ line }}</p>
+  }
+
+  <ng-container footer>
+    @if (editing) {
+      <button type="button" class="delete" [disabled]="!online()" (click)="delete()">{{ s.delete }}</button>
+    }
+    <button type="button" class="save" [disabled]="!canSave()" (click)="save()">
+      {{ s.save }}
+    </button>
+  </ng-container>
+</app-sheet>
